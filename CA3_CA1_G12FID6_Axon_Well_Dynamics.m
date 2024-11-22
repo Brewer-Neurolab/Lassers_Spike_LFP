@@ -35,17 +35,23 @@ fs=25000;
 t=0:1/fs:t_rec-(1/fs);
 
 
-spikes=remap(spikes,1,length(t),1,length(re_t));
+spikes=round(remap(spikes,1,length(t),1,length(re_t)));
 logicalSpikes=zeros(1,length(re_t));
 logicalSpikes(spikes)=1;
 
 wellSpikeAngles=LFPAngles(logicalSpikes&logicalValidLFPs);
 
+wellSpikeAngles=[wellSpikeAngles-360,wellSpikeAngles];
 
+histogram(wellSpikeAngles,-360:30:360)
 
+%% compare spikes at LFP
 
+wellSpikeAmp=LFPAmplitude(logicalSpikes&logicalValidLFPs);
 
+logbinAmp=logspace(1,4,12);
 
+histogram(wellSpikeAmp,logbinAmp)
 
-
-
+ax=gca;
+ax.XScale="log";
