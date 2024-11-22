@@ -1,9 +1,12 @@
-function identify_lfps(data,fs,wave_nsamples,nsamples_combine_thresh)
+function [endPts,dataAmplitude,myHilbert]=identify_lfps(data,fs, t_s, minLFPLength,minLFPCycles,nsamples_combine_thresh)
 %data should be a 1d vector
 %fs should be the sampling rate, input as a scalar
 %the min length of a wave should be specified in samples
 %nsamples_combine_thresh is the minimum number of samples two waves have to
 %be from one another, otherwise combine them
+
+%define time vector for plotting
+t=0:1/fs:t_s-(1/fs);
 
 %get hilbert transform of the data
 myHilbert=hilbert(data);
@@ -11,14 +14,41 @@ dataAmplitude=abs(myHilbert);
 
 %perform a gaussian convolution on the amplitude of hilbert data to smooth
 %evelope of the signal
-% gw=gausswin(wave_nsamples)
-% dataAmplitude=conv(dataAmplitude,gw,'same');
+gw=gausswin(round(minLFPLength/minLFPCycles),5);
+dataAmplitude=conv(dataAmplitude,gw,'same');
+
+%rescale data amplitude
+dataAmplitude=dataAmplitude*(max(abs(myHilbert))/max(dataAmplitude));
 
 %perform thresholding
 ampSTD=std(dataAmplitude);
-lowThresh=1.5*ampSTD;
-highThresh=2.5*ampSTD;
-threshedAmps=dataAmplitude>
+lowThresh=1*ampSTD;
+% highThresh=2.5*ampSTD;
+isAboveThresh=dataAmplitude>=lowThresh;
 
+% combine LFPs
+nChanges=Inf;
+while nChanges~=0
+    nChanges=0;
+    endPts=reshape(find(diff(isAboveThresh)~=0),2,[])';
+    for nGaps=1:size(endPts,1)-1
+        gapSize=endPts(nGaps+1,1)-endPts(nGaps,2);
+        if gapSize<=nsamples_combine_thresh
+            isAboveThresh(endPts(nGaps,2):endPts(nGaps+1,1))=1;
+            nChanges=nChanges+1;
+        end
+    end
+end
 
+%eliminate LFPs that are too short
+lfpLen=diff(endPts,1,2);
+endPts(lfpLen<minLFPLength,:)=[];
+
+figure
+hold on
+plot(t,data)
+plot(t,dataAmplitude,'k')
+plot(t(endPts(:,1)),dataAmplitude(endPts(:,1)),'g.',"MarkerSize",20)
+plot(t(endPts(:,2)),dataAmplitude(endPts(:,2)),'r.',"MarkerSize",20)
+hold off
 end
