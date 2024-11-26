@@ -63,7 +63,7 @@ ax.FontSize=16;
 well_burst_bounds=well_spike_dyn.BurstBounds{well_spike_dyn.fi==6 & well_spike_dyn.channel_name=="E10"};
 well_burst_starts=well_burst_bounds(:,1);
 % remap burst starts to new sampling rate
-well_burst_starts=round(remap(well_burst_starts,1,length(t),1,length(re_t)));
+well_burst_starts=remap(well_burst_starts,1,length(t),1,length(re_t));
 logicalBurstStarts=zeros(1,length(re_t));
 logicalBurstStarts(well_burst_starts)=1;
 
@@ -71,7 +71,7 @@ wellBurstStartAngles=LFPAngles(logicalBurstStarts&logicalValidLFPs);
 wellBurstStartAngles=[wellBurstStartAngles-360,wellBurstStartAngles];
 
 figure
-histogram(wellBurstStartAngles,-360:60:360)
+histogram(wellSpikeAngles,-360:60:360)
 xticks(-360:60:360)
 xlabel("Axon Theta Angle")
 ylabel("Soma Burst Start Count")
