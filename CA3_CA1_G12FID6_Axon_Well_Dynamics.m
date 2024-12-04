@@ -25,6 +25,14 @@ minLFPLength=(1/10)*minLFPCycles*re_fs;
 
 [LFPEndPts,LFPAmplitude,LFPHilbert]=identify_lfps(data,re_fs,t_rec,minLFPLength,minLFPCycles,nsamples_combine_thresh);
 LFPAngles=wrapTo360(angle(LFPHilbert)*(180/pi));
+
+rng('default')
+shuffledLFPAngles=[];
+for nPerm=1:100
+    randPermAngles=randperm(length(LFPAngles));
+    shuffledLFPAngles(nPerm,:)=LFPAngles(randPermAngles);
+end
+
 validLFPIndex=[];
 for nEndPts=1:size(LFPEndPts,1)
     validLFPIndex=[validLFPIndex,LFPEndPts(nEndPts,1):LFPEndPts(nEndPts,2)];
@@ -48,7 +56,6 @@ logicalSpikes=zeros(1,length(re_t));
 logicalSpikes(spikes)=1;
 
 wellSpikeAngles=LFPAngles(logicalSpikes&logicalValidLFPs);
-
 wellSpikeAngles=[wellSpikeAngles-360,wellSpikeAngles];
 
 figure
@@ -67,14 +74,101 @@ well_burst_starts=round(remap(well_burst_starts,1,length(t),1,length(re_t)));
 logicalBurstStarts=zeros(1,length(re_t));
 logicalBurstStarts(well_burst_starts)=1;
 
+figure
 wellBurstStartAngles=LFPAngles(logicalBurstStarts&logicalValidLFPs);
+phaseBurstStartProb=histogram(wellBurstStartAngles,0:20:360,"Normalization","probability");
+MI_BurstStart=spike_amplitude_MI(phaseBurstStartProb.Values);
 wellBurstStartAngles=[wellBurstStartAngles-360,wellBurstStartAngles];
 
 figure
-histogram(wellBurstStartAngles,-360:60:360)
+histogram(wellBurstStartAngles,-360:20:360)
 xticks(-360:60:360)
 xlabel("Axon Theta Angle")
 ylabel("Soma Burst Start Count")
+ax=gca;
+ax.FontSize=16;
+
+figure
+histogram(wellBurstStartAngles,-360:20:360,"Normalization","probability")
+xticks(-360:60:360)
+xlabel("Axon Theta Angle")
+ylabel("Soma Burst Start Probability")
+ax=gca;
+ax.FontSize=16;
+
+% plots amplitude in axon against target burst start
+wellBurstStartAmp=LFPAmplitude(logicalBurstStarts&logicalValidLFPs);
+figure
+h=histogram(wellBurstStartAmp,logspace(1,4,13),"Normalization","probability");
+hVals=h.Values;
+hBinCenters=convert_edges_2_centers(h.BinEdges);
+% xticks(-360:60:360)
+xlabel("Axon Theta Amp uV")
+ylabel("Soma Burst Start Probability")
+ax=gca;
+ax.FontSize=16;
+xlim([0,2000])
+% hold on
+% f=fit(hVals',hBinCenters',"log10");
+% plot(f,hVals,hBinCenters)
+ax.XScale="log";
+% ax.YScale="log";
+
+% figure
+% plot()
+%% Shuffle control
+well_burst_bounds=well_spike_dyn.BurstBounds{well_spike_dyn.fi==6 & well_spike_dyn.channel_name=="E10"};
+well_burst_starts=well_burst_bounds(:,1);
+% remap burst starts to new sampling rate
+well_burst_starts=round(remap(well_burst_starts,1,length(t),1,length(re_t)));
+logicalBurstStarts=zeros(1,length(re_t));
+logicalBurstStarts(well_burst_starts)=1;
+
+MI_Shuffled_BurstStart=[];
+for nPerm=1:100
+    % figure
+    wellBurstStartAngles=shuffledLFPAngles(nPerm,logicalBurstStarts&logicalValidLFPs);
+    phaseBurstStartProb=histogram(wellBurstStartAngles,0:20:360,"Normalization","probability");
+    MI_Shuffled_BurstStart(nPerm)=spike_amplitude_MI(phaseBurstStartProb.Values);
+    wellBurstStartAngles=[wellBurstStartAngles-360,wellBurstStartAngles];
+end
+
+figure
+h=histogram(MI_Shuffled_BurstStart);
+xline(MI_BurstStart,'Color','r')
+
+pValMI_BurstStart=sum(MI_Shuffled_BurstStart>=MI_BurstStart)/length(MI_Shuffled_BurstStart);
+
+xlabel("Shuffled MI")
+ylabel("MI Counts")
+ax=gca;
+ax.FontSize=16;
+
+%% Well spikes in bursts angles at high axon LFP
+well_burst_bounds=well_spike_dyn.BurstBounds{well_spike_dyn.fi==6 & well_spike_dyn.channel_name=="E10"};
+well_burst_bounds=round(remap(well_burst_bounds,1,length(t),1,length(re_t)));
+logicalIsBursting=zeros(1,length(re_t));
+
+for nBurst=1:size(well_burst_bounds,1)
+    logicalIsBursting(well_burst_bounds(nBurst,1):well_burst_bounds(nBurst,2))=1;
+end
+
+wellBurstSpikeAngles=LFPAngles(logicalIsBursting&logicalValidLFPs);
+wellBurstSpikeAngles=[wellBurstSpikeAngles-360,wellBurstSpikeAngles];
+
+figure
+histogram(wellBurstSpikeAngles,-360:20:360)
+xticks(-360:60:360)
+xlabel("Axon Theta Angle")
+ylabel("Soma Burst Spike Count")
+ax=gca;
+ax.FontSize=16;
+
+figure
+histogram(wellBurstSpikeAngles,-360:20:360,"Normalization","probability")
+xticks(-360:60:360)
+xlabel("Axon Theta Angle")
+ylabel("Soma Burst Spike Probability")
 ax=gca;
 ax.FontSize=16;
 %% compare spikes at LFP
