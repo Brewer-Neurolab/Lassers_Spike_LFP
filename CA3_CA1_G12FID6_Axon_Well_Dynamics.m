@@ -27,8 +27,10 @@ minLFPLength=(1/10)*minLFPCycles*re_fs;
 LFPAngles=wrapTo360(angle(LFPHilbert)*(180/pi));
 
 rng('default')
-shuffledLFPAngles=[];
-for nPerm=1:100
+nPermutations=500;
+
+shuffledLFPAngles=zeros(nPermutations,length(LFPAngles));
+for nPerm=1:nPermutations
     randPermAngles=randperm(length(LFPAngles));
     shuffledLFPAngles(nPerm,:)=LFPAngles(randPermAngles);
 end
@@ -125,7 +127,7 @@ logicalBurstStarts=zeros(1,length(re_t));
 logicalBurstStarts(well_burst_starts)=1;
 
 MI_Shuffled_BurstStart=[];
-for nPerm=1:100
+for nPerm=1:nPermutations
     % figure
     wellBurstStartAngles=shuffledLFPAngles(nPerm,logicalBurstStarts&logicalValidLFPs);
     phaseBurstStartProb=histogram(wellBurstStartAngles,0:20:360,"Normalization","probability");
@@ -143,6 +145,82 @@ xlabel("Shuffled MI")
 ylabel("MI Counts")
 ax=gca;
 ax.FontSize=16;
+
+%% Loop through all target well channels and compare with source axon
+
+MI_Table=table();
+
+CA1_Electrodes=well_spike_dyn.channel_name(well_spike_dyn.fi==6 & well_spike_dyn.regi==4);
+row=1;
+
+for nElec=1:length(CA1_Electrodes)
+    myElec=CA1_Electrodes(nElec);
+    well_burst_bounds=well_spike_dyn.BurstBounds{well_spike_dyn.fi==6 & well_spike_dyn.channel_name==myElec};
+    well_burst_starts=well_burst_bounds(:,1);
+    % remap burst starts to new sampling rate
+    well_burst_starts=round(remap(well_burst_starts,1,length(t),1,length(re_t)));
+    logicalBurstStarts=zeros(1,length(re_t));
+    logicalBurstStarts(well_burst_starts)=1;
+
+    figure
+    wellBurstStartAngles=LFPAngles(logicalBurstStarts&logicalValidLFPs);
+    phaseBurstStartProb=histogram(wellBurstStartAngles,0:20:360,"Normalization","probability");
+    MI_BurstStart=spike_amplitude_MI(phaseBurstStartProb.Values);
+    wellBurstStartAngles=[wellBurstStartAngles-360,wellBurstStartAngles];
+
+    figure
+    histogram(wellBurstStartAngles,-360:20:360)
+    xticks(-360:60:360)
+    xlabel("Axon Theta Angle")
+    ylabel("Soma Burst Start Count")
+    ax=gca;
+    ax.FontSize=16;
+    title(myElec+" "+MI_BurstStart)
+
+    figure
+    histogram(wellBurstStartAngles,-360:20:360,"Normalization","probability")
+    xticks(-360:60:360)
+    xlabel("Axon Theta Angle")
+    ylabel("Soma Burst Start Probability")
+    ax=gca;
+    ax.FontSize=16;
+    title(myElec+" MI="+MI_BurstStart)
+
+    % check for significance
+    MI_Shuffled_BurstStart=[];
+    for nPerm=1:nPermutations
+        % figure
+        wellBurstStartAngles=shuffledLFPAngles(nPerm,logicalBurstStarts&logicalValidLFPs);
+        phaseBurstStartProb=histogram(wellBurstStartAngles,0:20:360,"Normalization","probability");
+        MI_Shuffled_BurstStart(nPerm)=spike_amplitude_MI(phaseBurstStartProb.Values);
+        wellBurstStartAngles=[wellBurstStartAngles-360,wellBurstStartAngles];
+    end
+
+    figure
+    h=histogram(MI_Shuffled_BurstStart);
+    xline(MI_BurstStart,'Color','r')
+
+    pValMI_BurstStart=sum(MI_Shuffled_BurstStart>=MI_BurstStart)/length(MI_Shuffled_BurstStart);
+
+    xlabel("Shuffled MI")
+    ylabel("MI Counts")
+    ax=gca;
+    ax.FontSize=16;
+
+    title(myElec+" pval="+pValMI_BurstStart)
+
+    %update MI table
+    MI_Table.fi(row)=6;
+    MI_Table.Tunnel_Electrode(row)="G12";
+    MI_Table.Tunnel_reg(row)="CA3-CA1";
+    MI_Table.is_ff(row)=1;
+    MI_Table.Well_Electrode(row)=CA1_Electrodes(nElec);
+    MI_Table.Well_reg(row)="CA1";
+    MI_Table.MI(row)=MI_BurstStart;
+    MI_Table.pval(row)=pValMI_BurstStart;
+
+    row=row+1;
+end
 
 %% Well spikes in bursts angles at high axon LFP
 well_burst_bounds=well_spike_dyn.BurstBounds{well_spike_dyn.fi==6 & well_spike_dyn.channel_name=="E10"};
@@ -185,5 +263,29 @@ ylabel("Soma Spike")
 ax=gca;
 ax.XScale="log";
 
+%% 3D Graph of E10
 
+well_burst_bounds=well_spike_dyn.BurstBounds{well_spike_dyn.fi==6 & well_spike_dyn.channel_name=="E10"};
+well_burst_starts=well_burst_bounds(:,1);
+% remap burst starts to new sampling rate
+well_burst_starts=round(remap(well_burst_starts,1,length(t),1,length(re_t)));
+logicalBurstStarts=zeros(1,length(re_t));
+logicalBurstStarts(well_burst_starts)=1;
 
+figure
+wellBurstStartAngles=LFPAngles(logicalBurstStarts & logicalValidLFPs);
+% wellBurstStartAngles=[wellBurstStartAngles-360,wellBurstStartAngles];
+wellBurstStartAmp=LFPAmplitude(logicalBurstStarts & logicalValidLFPs);
+
+thetaAmpThresh=std(LFPAmplitude);
+
+X=[wellBurstStartAngles;wellBurstStartAmp]';
+edges={[0:40:360],logspace(log10(thetaAmpThresh),log10(max(LFPAmplitude)),10)};
+
+hist3(X,'Edges',edges)
+xlabel("Axon Phase Angle")
+ylabel("Axon Amplitude")
+zlabel("Soma Burst Starts Counts")
+
+ax=gca;
+ax.YScale="log";

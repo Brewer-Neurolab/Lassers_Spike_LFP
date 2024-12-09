@@ -30,7 +30,17 @@ isAboveThresh=dataAmplitude>=lowThresh;
 nChanges=Inf;
 while nChanges~=0
     nChanges=0;
-    endPts=reshape(find(diff(isAboveThresh)~=0),2,[])';
+    startstopidx=find(diff(isAboveThresh)~=0);
+
+    if mod(length(startstopidx),2)~=0
+        if isAboveThresh(1)
+            startstopidx(1)=[];
+        elseif isAboveThresh(end)
+            startstopidx(end)=[];
+        end
+    end
+
+    endPts=reshape(startstopidx,2,[])';
     for nGaps=1:size(endPts,1)-1
         gapSize=endPts(nGaps+1,1)-endPts(nGaps,2);
         if gapSize<=nsamples_combine_thresh
