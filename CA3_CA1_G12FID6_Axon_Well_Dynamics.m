@@ -263,6 +263,34 @@ ylabel("Soma Spike")
 ax=gca;
 ax.XScale="log";
 
+%% Spikes in bursts in LFP after burst start
+
+%find burst starts
+well_burst_bounds=well_spike_dyn.BurstBounds{well_spike_dyn.fi==6 & well_spike_dyn.channel_name=="E10"};
+well_burst_starts=well_burst_bounds(:,1);
+% remap burst starts to new sampling rate
+well_burst_starts=round(remap(well_burst_starts,1,length(t),1,length(re_t)));
+logicalBurstStarts=zeros(1,length(re_t));
+logicalBurstStarts(well_burst_starts)=1;
+
+%define burst ends
+well_burst_ends=well_burst_bounds(:,2);
+% remap burst starts to new sampling rate
+well_burst_ends=round(remap(well_burst_ends,1,length(t),1,length(re_t)));
+logicalBurstEnds=zeros(1,length(re_t));
+logicalBurstEnds(well_burst_ends)=1;
+
+%find burst starts/ends in high LFP
+highAmpBurstStarts=logicalBurstStarts(logicalBurstStarts & logicalValidLFPs);
+
+%create new bursting start/end matrix
+burstIdx=round(well_burst_starts)==round(find(highAmpBurstStarts));
+highBursts=well_burst_starts(burstIdx,:);
+
+spikesInHighBurstsAngles=[];
+for nBursts=1:size(highBursts,1)
+    validBurstIdx=highBursts(nBursts,1):highBursts(nBursts,2);
+end
 %% 3D Graph of E10
 
 well_burst_bounds=well_spike_dyn.BurstBounds{well_spike_dyn.fi==6 & well_spike_dyn.channel_name=="E10"};
