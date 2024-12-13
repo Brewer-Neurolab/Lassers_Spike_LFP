@@ -249,6 +249,7 @@ xlabel("Axon Theta Angle")
 ylabel("Soma Burst Spike Probability")
 ax=gca;
 ax.FontSize=16;
+
 %% compare spikes at LFP
 
 wellSpikeAmp=LFPAmplitude(logicalSpikes&logicalValidLFPs);
@@ -281,15 +282,152 @@ logicalBurstEnds=zeros(1,length(re_t));
 logicalBurstEnds(well_burst_ends)=1;
 
 %find burst starts/ends in high LFP
-highAmpBurstStarts=logicalBurstStarts(logicalBurstStarts & logicalValidLFPs);
+highAmpBurstStarts=logicalBurstStarts & logicalValidLFPs;
 
 %create new bursting start/end matrix
-burstIdx=round(well_burst_starts)==round(find(highAmpBurstStarts));
-highBursts=well_burst_starts(burstIdx,:);
+burstIdx=ismembertol(well_burst_starts,find(highAmpBurstStarts),1e-10);
+highBursts=[well_burst_starts(burstIdx,:),well_burst_ends(burstIdx,:)];
 
-spikesInHighBurstsAngles=[];
+%get phase angles of each burst
+angleProbs=[];
 for nBursts=1:size(highBursts,1)
     validBurstIdx=highBursts(nBursts,1):highBursts(nBursts,2);
+    highPhaseAngles=LFPAngles(validBurstIdx);
+    highPhaseAngles=[highPhaseAngles-360,highPhaseAngles];
+    burstAngleProb=histcounts(highPhaseAngles,[-360:20:360],"Normalization","probability");
+    angleProbs(nBursts,:)=burstAngleProb;
+end
+
+meanAngleProbs=mean(angleProbs,1);
+sdAngleProbs=std(angleProbs,[],1);
+seAngleProbs=sdAngleProbs./sqrt(size(angleProbs,1));
+
+figure
+histogram("BinEdges",[-360:20:360],"BinCounts",meanAngleProbs)
+hold on
+errorbar(convert_edges_2_centers([-360:20:360]),meanAngleProbs,seAngleProbs,"LineStyle","none","Color","k")
+hold off
+
+xticks(-360:40:360)
+xlabel("Axon Phase Angle")
+ylabel("Soma Spikes in Bursts Probability")
+ax=gca;
+ax.FontSize=16;
+%% Loop through all target well channels and compare with source axon
+
+MI_Table=table();
+
+CA1_Electrodes=well_spike_dyn.channel_name(well_spike_dyn.fi==6 & well_spike_dyn.regi==4);
+row=1;
+
+for nElec=1:length(CA1_Electrodes)
+    myElec=CA1_Electrodes(nElec);
+    well_burst_bounds=well_spike_dyn.BurstBounds{well_spike_dyn.fi==6 & well_spike_dyn.channel_name==myElec};
+    well_burst_starts=well_burst_bounds(:,1);
+    % remap burst starts to new sampling rate
+    well_burst_starts=round(remap(well_burst_starts,1,length(t),1,length(re_t)));
+    logicalBurstStarts=zeros(1,length(re_t));
+    logicalBurstStarts(well_burst_starts)=1;
+
+    %define burst ends
+    well_burst_ends=well_burst_bounds(:,2);
+    % remap burst starts to new sampling rate
+    well_burst_ends=round(remap(well_burst_ends,1,length(t),1,length(re_t)));
+    logicalBurstEnds=zeros(1,length(re_t));
+    logicalBurstEnds(well_burst_ends)=1;
+
+    %find burst starts/ends in high LFP
+    highAmpBurstStarts=logicalBurstStarts & logicalValidLFPs;
+
+    %create new bursting start/end matrix
+    burstIdx=ismembertol(well_burst_starts,find(highAmpBurstStarts),1e-10);
+    highBursts=[well_burst_starts(burstIdx,:),well_burst_ends(burstIdx,:)];
+
+    if isempty(highBursts)
+        MI_Table.fi(row)=6;
+        MI_Table.Tunnel_Electrode(row)="G12";
+        MI_Table.Tunnel_reg(row)="CA3-CA1";
+        MI_Table.is_ff(row)=1;
+        MI_Table.Well_Electrode(row)=CA1_Electrodes(nElec);
+        MI_Table.Well_reg(row)="CA1";
+        MI_Table.MI(row)=NaN;
+        MI_Table.pval(row)=NaN;
+
+        continue
+    end
+
+    %get phase angles of each burst
+    angleProbs=[];
+    for nBursts=1:size(highBursts,1)
+        validBurstIdx=highBursts(nBursts,1):highBursts(nBursts,2);
+        highPhaseAngles=LFPAngles(validBurstIdx);
+        highPhaseAngles=[highPhaseAngles-360,highPhaseAngles];
+        burstAngleProb=histcounts(highPhaseAngles,[-360:20:360],"Normalization","probability");
+        angleProbs(nBursts,:)=burstAngleProb;
+    end
+
+    meanAngleProbs=mean(angleProbs,1,"omitnan");
+    sdAngleProbs=std(angleProbs,[],1,"omitmissing");
+    seAngleProbs=sdAngleProbs./sqrt(size(angleProbs,1));
+
+    figure
+    histogram("BinEdges",[-360:20:360],"BinCounts",meanAngleProbs)
+    hold on
+    errorbar(convert_edges_2_centers([-360:20:360]),meanAngleProbs,seAngleProbs,"LineStyle","none","Color","k")
+    hold off
+
+    MI_BurstAvg=spike_amplitude_MI(meanAngleProbs);
+    xticks(-360:40:360)
+    xlabel("Axon Phase Angle")
+    ylabel("Soma Spikes in Bursts Probability")
+    ax=gca;
+    ax.FontSize=16;
+    title(myElec+" MI="+MI_BurstAvg)
+
+    % check for significance
+    MI_Shuffled_Burst=[];
+    for nPerm=1:nPermutations
+        % figure
+        angleProbs=[];
+        for nBursts=1:size(highBursts,1)
+            validBurstIdx=highBursts(nBursts,1):highBursts(nBursts,2);
+            highPhaseAngles=shuffledLFPAngles(nPerm,validBurstIdx);
+            highPhaseAngles=[highPhaseAngles-360,highPhaseAngles];
+            burstAngleProb=histcounts(highPhaseAngles,[-360:20:360],"Normalization","probability");
+            angleProbs(nBursts,:)=burstAngleProb;
+        end
+
+        meanAngleProbs=mean(angleProbs,1);
+        sdAngleProbs=std(angleProbs,[],1);
+        seAngleProbs=sdAngleProbs./sqrt(size(angleProbs,1));
+
+        MI_Shuffled_Burst(nPerm)=spike_amplitude_MI(meanAngleProbs);
+    end
+
+    figure
+    h=histogram(MI_Shuffled_Burst);
+    xline(MI_BurstAvg,'Color','r')
+
+    pValMI_Burst=sum(MI_Shuffled_Burst>=MI_BurstAvg)/length(MI_Shuffled_Burst);
+
+    xlabel("Shuffled MI")
+    ylabel("MI Counts")
+    ax=gca;
+    ax.FontSize=16;
+
+    title(myElec+" pval="+pValMI_Burst)
+
+    %update MI table
+    MI_Table.fi(row)=6;
+    MI_Table.Tunnel_Electrode(row)="G12";
+    MI_Table.Tunnel_reg(row)="CA3-CA1";
+    MI_Table.is_ff(row)=1;
+    MI_Table.Well_Electrode(row)=CA1_Electrodes(nElec);
+    MI_Table.Well_reg(row)="CA1";
+    MI_Table.MI(row)=MI_BurstAvg;
+    MI_Table.pval(row)=pValMI_Burst;
+
+    row=row+1;
 end
 %% 3D Graph of E10
 
