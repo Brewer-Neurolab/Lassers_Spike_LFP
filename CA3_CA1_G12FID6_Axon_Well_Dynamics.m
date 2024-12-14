@@ -294,7 +294,7 @@ for nBursts=1:size(highBursts,1)
     validBurstIdx=highBursts(nBursts,1):highBursts(nBursts,2);
     highPhaseAngles=LFPAngles(validBurstIdx);
     highPhaseAngles=[highPhaseAngles-360,highPhaseAngles];
-    burstAngleProb=histcounts(highPhaseAngles,[-360:20:360],"Normalization","probability");
+    burstAngleProb=histcounts(highPhaseAngles,[-360:20:360]);
     angleProbs(nBursts,:)=burstAngleProb;
 end
 
@@ -455,3 +455,71 @@ zlabel("Soma Burst Starts Counts")
 
 ax=gca;
 ax.YScale="log";
+%% 3D Graph of E10 spikes in bursts
+
+%find burst starts
+well_burst_bounds=well_spike_dyn.BurstBounds{well_spike_dyn.fi==6 & well_spike_dyn.channel_name=="E10"};
+well_burst_starts=well_burst_bounds(:,1);
+% remap burst starts to new sampling rate
+well_burst_starts=round(remap(well_burst_starts,1,length(t),1,length(re_t)));
+logicalBurstStarts=zeros(1,length(re_t));
+logicalBurstStarts(well_burst_starts)=1;
+
+%define burst ends
+well_burst_ends=well_burst_bounds(:,2);
+% remap burst starts to new sampling rate
+well_burst_ends=round(remap(well_burst_ends,1,length(t),1,length(re_t)));
+logicalBurstEnds=zeros(1,length(re_t));
+logicalBurstEnds(well_burst_ends)=1;
+
+%find burst starts/ends in high LFP
+highAmpBurstStarts=logicalBurstStarts & logicalValidLFPs;
+
+%create new bursting start/end matrix
+burstIdx=ismembertol(well_burst_starts,find(highAmpBurstStarts),1e-10);
+highBursts=[well_burst_starts(burstIdx,:),well_burst_ends(burstIdx,:)];
+
+%get phase angles of each burst
+angleProbs=[];
+ampProbs=[];
+thetaAmpThresh=std(LFPAmplitude);
+probsStack=[];
+for nBursts=1:size(highBursts,1)
+    validBurstIdx=highBursts(nBursts,1):highBursts(nBursts,2);
+
+    highPhaseAngles=LFPAngles(validBurstIdx);
+    burstAngleProb=histcounts(highPhaseAngles,[0:40:360],"Normalization","probability");
+    angleProbs(nBursts,:)=burstAngleProb;
+
+    highAmps=LFPAmplitude(validBurstIdx);
+    burstAmp=histcounts(highAmps,logspace(log10(thetaAmpThresh),log10(max(LFPAmplitude)),10),"Normalization","probability");
+    ampProbs(nBursts,:)=burstAmp;
+
+    % figure
+
+    X=[highPhaseAngles;highAmps]';
+    edges={[0:40:360],logspace(log10(thetaAmpThresh),log10(max(LFPAmplitude)),10)};
+
+    N=hist3(X,'Edges',edges);
+    % hist3(X,'Edges',edges)
+    xlabel("Axon Phase Angle")
+    ylabel("Axon Amplitude")
+    zlabel("Soma Burst Spike Counts")
+
+    ax=gca;
+    ax.YScale="log";
+    probsStack(:,:,nBursts)=N;
+end
+
+figure
+meanCounts=mean(probsStack,3);
+histogram2('XBinEdges',[0:40:360],'YBinEdges',logspace(log10(thetaAmpThresh),log10(max(LFPAmplitude)),10),'BinCounts',meanCounts(1:9,1:9))
+xlabel("Axon Phase Angle")
+ylabel("Axon Amplitude")
+zlabel("Soma Mean Burst Spike Counts")
+
+ax=gca;
+ax.YScale="log";
+
+
+%% Find how many theta oscilations above threshold have no bursts vs how many have a burst
