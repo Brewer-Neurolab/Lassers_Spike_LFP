@@ -288,20 +288,44 @@ highAmpBurstStarts=logicalBurstStarts & logicalValidLFPs;
 burstIdx=ismembertol(well_burst_starts,find(highAmpBurstStarts),1e-10);
 highBursts=[well_burst_starts(burstIdx,:),well_burst_ends(burstIdx,:)];
 
+% get spikes from channel
+spikes=load("D:\Brewer lab data\Slow Oscillation 4 Chamber 5 Tunnel Arrays\4x 210715 210806\1\Well Spikes\4x 33168 210715 21div 210806_1.h5\E10_spikes.mat");
+spikes=spikes.index/1000;
+fs=25000;
+t=0:1/fs:t_rec-(1/fs);
+spikes=ismembertol(t,spikes,1e-10);
+spikes=find(spikes);
+
+spikes=round(remap(spikes,1,length(t),1,length(re_t)));
+logicalSpikes=zeros(1,length(re_t));
+logicalSpikes(spikes)=1;
+
 %get phase angles of each burst
 angleProbs=[];
+ampProbs=[];
+thetaAmpThresh=std(LFPAmplitude);
 for nBursts=1:size(highBursts,1)
     validBurstIdx=highBursts(nBursts,1):highBursts(nBursts,2);
-    highPhaseAngles=LFPAngles(validBurstIdx);
+    validSpikeIdx=ismembertol(spikes,validBurstIdx,1e-10);
+    validSpikeIdx=spikes(validSpikeIdx);
+    spikeCount=spikeCount+length(validSpikeIdx);
+
+    highPhaseAngles=LFPAngles(validSpikeIdx);
     highPhaseAngles=[highPhaseAngles-360,highPhaseAngles];
-    burstAngleProb=histcounts(highPhaseAngles,[-360:20:360]);
+    burstAngleProb=histcounts(highPhaseAngles,[-360:20:360],"Normalization","probability");
     angleProbs(nBursts,:)=burstAngleProb;
+
+    highAmps=LFPAngles(validSpikeIdx);
+    % highAmps=[highAmps];
+    burstAmpProb=histcounts(highAmps,logspace(log10(thetaAmpThresh),log10(max(LFPAmplitude)),10),"Normalization","probability");
+    ampProbs(nBursts,:)=burstAmpProb;
 end
 
 meanAngleProbs=mean(angleProbs,1);
 sdAngleProbs=std(angleProbs,[],1);
 seAngleProbs=sdAngleProbs./sqrt(size(angleProbs,1));
 
+%plot angles in 2d
 figure
 histogram("BinEdges",[-360:20:360],"BinCounts",meanAngleProbs)
 hold on
@@ -313,6 +337,25 @@ xlabel("Axon Phase Angle")
 ylabel("Soma Spikes in Bursts Probability")
 ax=gca;
 ax.FontSize=16;
+title("E10")
+
+meanAmpProbs=mean(ampProbs,1);
+sdAmpProbs=std(ampProbs,[],1);
+seAmpProbs=sdAngleProbs./sqrt(size(ampProbs,1));
+
+%plot amps in 2d
+figure
+histogram("BinEdges",logspace(log10(thetaAmpThresh),log10(max(LFPAmplitude)),10),"BinCounts",meanAmpProbs)
+hold on
+errorbar(convert_edges_2_centers(logspace(log10(thetaAmpThresh),log10(max(LFPAmplitude)),10)),meanAmpProbs,seAmpProbs,"LineStyle","none","Color","k")
+hold off
+
+% xticks(-360:40:360)
+xlabel("Axon Phase Angle")
+ylabel("Soma Spikes in Bursts Probability")
+ax=gca;
+ax.FontSize=16;
+title("E10")
 %% Loop through all target well channels and compare with source axon
 
 MI_Table=table();
@@ -429,7 +472,7 @@ for nElec=1:length(CA1_Electrodes)
 
     row=row+1;
 end
-%% 3D Graph of E10
+%% 3D Graph of E10 AT START OF WELL BURST ONLY PHASE AND AMP
 
 well_burst_bounds=well_spike_dyn.BurstBounds{well_spike_dyn.fi==6 & well_spike_dyn.channel_name=="E10"};
 well_burst_starts=well_burst_bounds(:,1);
@@ -479,19 +522,40 @@ highAmpBurstStarts=logicalBurstStarts & logicalValidLFPs;
 burstIdx=ismembertol(well_burst_starts,find(highAmpBurstStarts),1e-10);
 highBursts=[well_burst_starts(burstIdx,:),well_burst_ends(burstIdx,:)];
 
-%get phase angles of each burst
+% get spikes from channel
+spikes=load("D:\Brewer lab data\Slow Oscillation 4 Chamber 5 Tunnel Arrays\4x 210715 210806\1\Well Spikes\4x 33168 210715 21div 210806_1.h5\E10_spikes.mat");
+spikes=spikes.index/1000;
+fs=25000;
+t=0:1/fs:t_rec-(1/fs);
+spikes=ismembertol(t,spikes,1e-10);
+spikes=find(spikes);
+
+spikes=round(remap(spikes,1,length(t),1,length(re_t)));
+logicalSpikes=zeros(1,length(re_t));
+logicalSpikes(spikes)=1;
+
+%get phase angles of each burst including and after start
 angleProbs=[];
 ampProbs=[];
 thetaAmpThresh=std(LFPAmplitude);
 probsStack=[];
+spikeCount=0;
+
+somaSpikeAmplitudes=[];
+somaSpikePhases=[];
 for nBursts=1:size(highBursts,1)
     validBurstIdx=highBursts(nBursts,1):highBursts(nBursts,2);
+    validSpikeIdx=ismembertol(spikes,validBurstIdx,1e-10);
+    validSpikeIdx=spikes(validSpikeIdx);
+    spikeCount=spikeCount+length(validSpikeIdx);
 
-    highPhaseAngles=LFPAngles(validBurstIdx);
+    highPhaseAngles=LFPAngles(validSpikeIdx);
+    % highPhaseAngles=[highPhaseAngles-360,highPhaseAngles];
     burstAngleProb=histcounts(highPhaseAngles,[0:40:360],"Normalization","probability");
     angleProbs(nBursts,:)=burstAngleProb;
 
-    highAmps=LFPAmplitude(validBurstIdx);
+    highAmps=LFPAmplitude(validSpikeIdx);
+    % highAmps=[highAmps,highAmps];
     burstAmp=histcounts(highAmps,logspace(log10(thetaAmpThresh),log10(max(LFPAmplitude)),10),"Normalization","probability");
     ampProbs(nBursts,:)=burstAmp;
 
@@ -509,17 +573,47 @@ for nBursts=1:size(highBursts,1)
     ax=gca;
     ax.YScale="log";
     probsStack(:,:,nBursts)=N;
+
+    somaSpikeAmplitudes{nBursts}=highAmps;
+    somaSpikePhases{nBursts}=highPhaseAngles;
 end
 
 figure
-meanCounts=mean(probsStack,3);
+meanCounts=sum(probsStack,3);
 histogram2('XBinEdges',[0:40:360],'YBinEdges',logspace(log10(thetaAmpThresh),log10(max(LFPAmplitude)),10),'BinCounts',meanCounts(1:9,1:9))
 xlabel("Axon Phase Angle")
 ylabel("Axon Amplitude")
-zlabel("Soma Mean Burst Spike Counts")
+zlabel("Soma Spike Counts")
 
 ax=gca;
 ax.YScale="log";
 
+figure
+scatter(cell2mat(somaSpikePhases),cell2mat(somaSpikeAmplitudes))
+ax=gca;
+ax.YScale="log";
 
-%% Find how many theta oscilations above threshold have no bursts vs how many have a burst
+covPhaseAmp=cov(cell2mat(somaSpikePhases),log10(cell2mat(somaSpikeAmplitudes)));
+
+%% create video of the 3d probability field E10
+v=VideoWriter("C:\Users\lasss\Documents\Research\Brewer Lab work\Code\Lassers_Spike_LFP\Test Images\E10 Phase Amp Stack.mp4");
+v.FrameRate=2;
+open(v)
+figure
+set(gca,"NextPlot","replacechildren")
+ax=gca;
+ax.YScale="log";
+for nStack=1:size(probsStack,3)
+    histogram2('XBinEdges',[0:40:360],'YBinEdges',logspace(log10(thetaAmpThresh),log10(max(LFPAmplitude)),10),'BinCounts',probsStack(1:9,1:9,nStack))
+    frame=getframe(gcf);
+    writeVideo(v,frame)
+    zlim([0,max(probsStack,[],"all")])
+    xlabel("Axon Phase Angle")
+    ylabel("Axon Amplitude")
+    zlabel("Soma Spike Counts")
+end
+close(v)
+%% Find how many theta oscilations above threshold have no bursts vs how many have a burst E10
+
+nOscWithBurst=sum(any(probsStack,[1,2]));
+nOscWithoutBurst=sum(~any(probsStack,[1,2]));
