@@ -498,6 +498,68 @@ zlabel("Soma Burst Starts Counts")
 
 ax=gca;
 ax.YScale="log";
+%% create video of the 3d probability field E10 burst starts
+v=VideoWriter("C:\Users\lasss\Documents\Research\Brewer Lab work\Code\Lassers_Spike_LFP\Test Images\E10 Phase Amp Stack Burst Starts.mp4");
+v.FrameRate=2;
+open(v)
+figure
+set(gca,"NextPlot","replacechildren")
+ax=gca;
+ax.YScale="log";
+edges={[0:40:360],logspace(log10(thetaAmpThresh),log10(max(LFPAmplitude)),10)};
+for nStack=1:size(probsStack,3)
+    hist3(X,'Edges',edges)
+    frame=getframe(gcf);
+    writeVideo(v,frame)
+    zlim([0,max(probsStack,[],"all")])
+    xlabel("Axon Phase Angle")
+    ylabel("Axon Amplitude")
+    zlabel("Soma Spike Counts")
+end
+close(v)
+%% 3D Graph of E10 AT START OF WELL BURST ONLY PHASE AND AMP SPIKES PER BURST CUMMULATIVE DIST
+
+well_burst_bounds=well_spike_dyn.BurstBounds{well_spike_dyn.fi==6 & well_spike_dyn.channel_name=="E10"};
+well_burst_starts=well_burst_bounds(:,1);
+% remap burst starts to new sampling rate
+well_burst_starts=round(remap(well_burst_starts,1,length(t),1,length(re_t)));
+logicalBurstStarts=zeros(1,length(re_t));
+logicalBurstStarts(well_burst_starts)=1;
+
+figure
+wellBurstStartAngles=LFPAngles(logicalBurstStarts & logicalValidLFPs);
+% wellBurstStartAngles=[wellBurstStartAngles-360,wellBurstStartAngles];
+wellBurstStartAmp=LFPAmplitude(logicalBurstStarts & logicalValidLFPs);
+
+thetaAmpThresh=std(LFPAmplitude);
+
+%repeat for spikes per burst
+repwellBurstStartAngles=[];
+repwellBurstStartAmp=[];
+
+burstIdx=ismembertol(well_burst_starts,find(logicalBurstStarts & logicalValidLFPs),1e-10);
+burstIdx=find(burstIdx);
+well_spb=well_spike_dyn.SpikeperBurst{well_spike_dyn.fi==6 & well_spike_dyn.channel_name=="E10"};
+
+for nBursts=1:length(wellBurstStartAngles)
+    repwellBurstStartAngles=[repwellBurstStartAngles,repmat(wellBurstStartAngles(nBursts),1,well_spb(burstIdx(nBursts)))];
+    repwellBurstStartAmp=[repwellBurstStartAmp,repmat(wellBurstStartAmp(nBursts),1,well_spb(burstIdx(nBursts)))];
+end
+
+X=[repwellBurstStartAngles;repwellBurstStartAmp]';
+edges={[0:40:360],logspace(log10(thetaAmpThresh),log10(max(LFPAmplitude)),10)};
+
+hist3(X,'Edges',edges)
+xlabel("Axon Phase Angle (deg)")
+ylabel("Axon Burst Start Amplitude (uV)")
+zlabel("Cummulative Soma Spikes Per Burst")
+
+xlim([0,360])
+yticks(0:200:1200)
+ylim([(thetaAmpThresh),max(LFPAmplitude)])
+
+ax=gca;
+ax.YScale="log";
 %% 3D Graph of E10 spikes in bursts
 
 %find burst starts
@@ -611,9 +673,116 @@ for nStack=1:size(probsStack,3)
     xlabel("Axon Phase Angle")
     ylabel("Axon Amplitude")
     zlabel("Soma Spike Counts")
+    title("Axon High Amplitude: "+)
 end
 close(v)
 %% Find how many theta oscilations above threshold have no bursts vs how many have a burst E10
 
-nOscWithBurst=sum(any(probsStack,[1,2]));
-nOscWithoutBurst=sum(~any(probsStack,[1,2]));
+nOscWithBurst=sum(any(probsStack,[1,2])); % 88
+nOscWithoutBurst=sum(~any(probsStack,[1,2])); %28
+
+%% Loop through all targets in CA1 and make a 3D plot
+
+CA1_Electrodes=well_spike_dyn.channel_name(well_spike_dyn.fi==6 & well_spike_dyn.regi==4);
+row=1;
+
+for nElec=1:length(CA1_Electrodes)
+    %find burst starts
+    well_burst_bounds=well_spike_dyn.BurstBounds{well_spike_dyn.fi==6 & well_spike_dyn.channel_name==CA1_Electrodes(nElec)};
+    well_burst_starts=well_burst_bounds(:,1);
+    % remap burst starts to new sampling rate
+    well_burst_starts=round(remap(well_burst_starts,1,length(t),1,length(re_t)));
+    logicalBurstStarts=zeros(1,length(re_t));
+    logicalBurstStarts(well_burst_starts)=1;
+
+    %define burst ends
+    well_burst_ends=well_burst_bounds(:,2);
+    % remap burst starts to new sampling rate
+    well_burst_ends=round(remap(well_burst_ends,1,length(t),1,length(re_t)));
+    logicalBurstEnds=zeros(1,length(re_t));
+    logicalBurstEnds(well_burst_ends)=1;
+
+    %find burst starts/ends in high LFP
+    highAmpBurstStarts=logicalBurstStarts & logicalValidLFPs;
+
+    %create new bursting start/end matrix
+    burstIdx=ismembertol(well_burst_starts,find(highAmpBurstStarts),1e-10);
+    highBursts=[well_burst_starts(burstIdx,:),well_burst_ends(burstIdx,:)];
+
+    % get spikes from channel
+    spikes=load("D:\Brewer lab data\Slow Oscillation 4 Chamber 5 Tunnel Arrays\4x 210715 210806\1\Well Spikes\4x 33168 210715 21div 210806_1.h5\"+CA1_Electrodes(nElec)+"_spikes.mat");
+    spikes=spikes.index/1000;
+    fs=25000;
+    t=0:1/fs:t_rec-(1/fs);
+    spikes=ismembertol(t,spikes,1e-10);
+    spikes=find(spikes);
+
+    spikes=round(remap(spikes,1,length(t),1,length(re_t)));
+    logicalSpikes=zeros(1,length(re_t));
+    logicalSpikes(spikes)=1;
+
+    %get phase angles of each burst including and after start
+    angleProbs=[];
+    ampProbs=[];
+    thetaAmpThresh=std(LFPAmplitude);
+    probsStack=[];
+    spikeCount=0;
+
+    somaSpikeAmplitudes=[];
+    somaSpikePhases=[];
+    for nBursts=1:size(highBursts,1)
+        validBurstIdx=highBursts(nBursts,1):highBursts(nBursts,2);
+        validSpikeIdx=ismembertol(spikes,validBurstIdx,1e-10);
+        validSpikeIdx=spikes(validSpikeIdx);
+        spikeCount=spikeCount+length(validSpikeIdx);
+
+        highPhaseAngles=LFPAngles(validSpikeIdx);
+        % highPhaseAngles=[highPhaseAngles-360,highPhaseAngles];
+        burstAngleProb=histcounts(highPhaseAngles,[0:40:360],"Normalization","probability");
+        angleProbs(nBursts,:)=burstAngleProb;
+
+        highAmps=LFPAmplitude(validSpikeIdx);
+        % highAmps=[highAmps,highAmps];
+        burstAmp=histcounts(highAmps,logspace(log10(thetaAmpThresh),log10(max(LFPAmplitude)),10),"Normalization","probability");
+        ampProbs(nBursts,:)=burstAmp;
+
+        % figure
+
+        X=[highPhaseAngles;highAmps]';
+        edges={[0:40:360],logspace(log10(thetaAmpThresh),log10(max(LFPAmplitude)),10)};
+
+        N=hist3(X,'Edges',edges);
+        % hist3(X,'Edges',edges)
+        xlabel("Axon Phase Angle")
+        ylabel("Axon Amplitude")
+        zlabel("Soma Burst Spike Counts")
+
+        ax=gca;
+        ax.YScale="log";
+        probsStack(:,:,nBursts)=N;
+
+        somaSpikeAmplitudes{nBursts}=highAmps;
+        somaSpikePhases{nBursts}=highPhaseAngles;
+    end
+
+    figure
+    meanCounts=sum(probsStack,3);
+
+    if isempty(meanCounts)
+        continue
+    end
+
+    histogram2('XBinEdges',[0:40:360],'YBinEdges',logspace(log10(thetaAmpThresh),log10(max(LFPAmplitude)),10),'BinCounts',meanCounts(1:9,1:9))
+    xlabel("Axon Phase Angle")
+    ylabel("Axon Amplitude")
+    zlabel("Soma Spike Counts")
+    title(CA1_Electrodes(nElec))
+
+    ax=gca;
+    ax.YScale="log";
+
+    % figure
+    % scatter(cell2mat(somaSpikePhases),cell2mat(somaSpikeAmplitudes))
+    % ax=gca;
+    % ax.YScale="log";
+end
