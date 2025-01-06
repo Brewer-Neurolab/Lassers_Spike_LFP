@@ -118,6 +118,48 @@ for nElec=1:length(CA3_Electrodes)
     row=row+1;
 end
 
+%% 3D Graph of E10 AT START OF WELL BURST ONLY PHASE AND AMP SPIKES PER BURST CUMMULATIVE DIST
 
+well_burst_bounds=well_spike_dyn.BurstBounds{well_spike_dyn.fi==6 & well_spike_dyn.channel_name=="E10"};
+well_burst_starts=well_burst_bounds(:,1);
+% remap burst starts to new sampling rate
+well_burst_starts=round(remap(well_burst_starts,1,length(t),1,length(re_t)));
+logicalBurstStarts=zeros(1,length(re_t));
+logicalBurstStarts(well_burst_starts)=1;
+
+figure
+wellBurstStartAngles=LFPAngles(logicalBurstStarts & logicalValidLFPs);
+% wellBurstStartAngles=[wellBurstStartAngles-360,wellBurstStartAngles];
+wellBurstStartAmp=LFPAmplitude(logicalBurstStarts & logicalValidLFPs);
+
+thetaAmpThresh=std(LFPAmplitude);
+
+%repeat for spikes per burst
+repwellBurstStartAngles=[];
+repwellBurstStartAmp=[];
+
+burstIdx=ismembertol(well_burst_starts,find(logicalBurstStarts & logicalValidLFPs),1e-10);
+burstIdx=find(burstIdx);
+well_spb=well_spike_dyn.SpikeperBurst{well_spike_dyn.fi==6 & well_spike_dyn.channel_name=="E10"};
+
+for nBursts=1:length(wellBurstStartAngles)
+    repwellBurstStartAngles=[repwellBurstStartAngles,repmat(wellBurstStartAngles(nBursts),1,well_spb(burstIdx(nBursts)))];
+    repwellBurstStartAmp=[repwellBurstStartAmp,repmat(wellBurstStartAmp(nBursts),1,well_spb(burstIdx(nBursts)))];
+end
+
+X=[repwellBurstStartAngles;repwellBurstStartAmp]';
+edges={[0:40:360],logspace(log10(thetaAmpThresh),log10(max(LFPAmplitude)),10)};
+
+hist3(X,'Edges',edges)
+xlabel("Axon Phase Angle (deg)")
+ylabel("Axon Burst Start Amplitude (uV)")
+zlabel("Cummulative Soma Spikes Per Burst")
+
+xlim([0,360])
+yticks(0:200:1200)
+ylim([(thetaAmpThresh),max(LFPAmplitude)])
+
+ax=gca;
+ax.YScale="log";
 
 
