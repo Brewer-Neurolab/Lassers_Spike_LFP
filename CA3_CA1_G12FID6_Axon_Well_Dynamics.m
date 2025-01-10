@@ -562,6 +562,54 @@ ylim([(thetaAmpThresh),max(LFPAmplitude)])
 
 ax=gca;
 ax.YScale="log";
+%% Test function
+targetElecs=well_spike_dyn.channel_name(well_spike_dyn.fi==6 & well_spike_dyn.regi==4);
+cummulative_axon_well_burst_start(LFPAmplitude,LFPAngles,6,"G12",targetElecs,well_spike_dyn)
+%% 3D Graph of E10 AT START OF WELL BURST ONLY PHASE AND AMP SPIKES PER BURST CUMMULATIVE DIST NOT DURING HIGH AMPLITUDE AXONAL OSCILLATIONS
+%cummulative dist may be most accurate
+
+well_burst_bounds=well_spike_dyn.BurstBounds{well_spike_dyn.fi==6 & well_spike_dyn.channel_name=="E10"};
+well_burst_starts=well_burst_bounds(:,1);
+% remap burst starts to new sampling rate
+well_burst_starts=round(remap(well_burst_starts,1,length(t),1,length(re_t)));
+logicalBurstStarts=zeros(1,length(re_t));
+logicalBurstStarts(well_burst_starts)=1;
+
+figure
+wellBurstStartAngles=LFPAngles(logicalBurstStarts & ~logicalValidLFPs);
+% wellBurstStartAngles=[wellBurstStartAngles-360,wellBurstStartAngles];
+wellBurstStartAmp=LFPAmplitude(logicalBurstStarts & ~logicalValidLFPs);
+
+thetaAmpThresh=std(LFPAmplitude);
+
+%repeat for spikes per burst
+repwellBurstStartAngles=[];
+repwellBurstStartAmp=[];
+
+burstIdx=ismembertol(well_burst_starts,find(logicalBurstStarts & ~logicalValidLFPs),1e-10);
+burstIdx=find(burstIdx);
+well_spb=well_spike_dyn.SpikeperBurst{well_spike_dyn.fi==6 & well_spike_dyn.channel_name=="E10"};
+
+for nBursts=1:length(wellBurstStartAngles)
+    repwellBurstStartAngles=[repwellBurstStartAngles,repmat(wellBurstStartAngles(nBursts),1,well_spb(burstIdx(nBursts)))];
+    repwellBurstStartAmp=[repwellBurstStartAmp,repmat(wellBurstStartAmp(nBursts),1,well_spb(burstIdx(nBursts)))];
+end
+
+X=[repwellBurstStartAngles;repwellBurstStartAmp]';
+edges={[0:40:360],logspace(log10(min(repwellBurstStartAmp,[],"all")),log10(max(repwellBurstStartAmp,[],"all")),10)};
+
+hist3(X,'Edges',edges,'CDataMode','manual','FaceColor','interp')
+xlabel("Axon Phase Angle (deg)")
+ylabel("Axon Burst Start Amplitude (uV)")
+zlabel("Cummulative Soma Spikes Per Burst")
+
+xlim([0,360])
+yticks(logspace(log10(min(repwellBurstStartAmp,[],"all")),log10(max(repwellBurstStartAmp,[],"all")),10))
+yticklabels(round(logspace(log10(min(repwellBurstStartAmp,[],"all")),log10(max(repwellBurstStartAmp,[],"all")),10),1))
+ylim([min(repwellBurstStartAmp,[],"all"),max(repwellBurstStartAmp,[],"all")])
+
+ax=gca;
+ax.YScale="log";
 %% 3D Graph of E10 spikes in bursts
 
 %find burst starts
@@ -792,7 +840,7 @@ end
 
 
 
-%% 3D Graph of A AT START OF WELL BURST ONLY PHASE AND AMP SPIKES PER BURST CUMMULATIVE DIST
+%% 3D Graph of A8 AT START OF WELL BURST ONLY PHASE AND AMP SPIKES PER BURST CUMMULATIVE DIST
 
 well_burst_bounds=well_spike_dyn.BurstBounds{well_spike_dyn.fi==6 & well_spike_dyn.channel_name=="A8"};
 well_burst_starts=well_burst_bounds(:,1);
@@ -861,6 +909,150 @@ highBursts=[well_burst_starts(burstIdx,:),well_burst_ends(burstIdx,:)];
 
 % get spikes from channel
 spikes=load("D:\Brewer lab data\Slow Oscillation 4 Chamber 5 Tunnel Arrays\4x 210715 210806\1\Well Spikes\4x 33168 210715 21div 210806_1.h5\A8_spikes.mat");
+spikes=spikes.index/1000;
+fs=25000;
+t=0:1/fs:t_rec-(1/fs);
+spikes=ismembertol(t,spikes,1e-10);
+spikes=find(spikes);
+
+spikes=round(remap(spikes,1,length(t),1,length(re_t)));
+logicalSpikes=zeros(1,length(re_t));
+logicalSpikes(spikes)=1;
+
+%get phase angles of each burst including and after start
+angleProbs=[];
+ampProbs=[];
+thetaAmpThresh=std(LFPAmplitude);
+probsStack=[];
+spikeCount=0;
+
+somaSpikeAmplitudes=[];
+somaSpikePhases=[];
+for nBursts=1:size(highBursts,1)
+    validBurstIdx=highBursts(nBursts,1):highBursts(nBursts,2);
+    validSpikeIdx=ismembertol(spikes,validBurstIdx,1e-10);
+    validSpikeIdx=spikes(validSpikeIdx);
+    spikeCount=spikeCount+length(validSpikeIdx);
+
+    highPhaseAngles=LFPAngles(validSpikeIdx);
+    % highPhaseAngles=[highPhaseAngles-360,highPhaseAngles];
+    burstAngleProb=histcounts(highPhaseAngles,[0:40:360],"Normalization","probability");
+    angleProbs(nBursts,:)=burstAngleProb;
+
+    highAmps=LFPAmplitude(validSpikeIdx);
+    % highAmps=[highAmps,highAmps];
+    burstAmp=histcounts(highAmps,logspace(log10(thetaAmpThresh),log10(max(LFPAmplitude)),10),"Normalization","probability");
+    ampProbs(nBursts,:)=burstAmp;
+
+    % figure
+
+    X=[highPhaseAngles;highAmps]';
+    edges={[0:40:360],logspace(log10(thetaAmpThresh),log10(max(LFPAmplitude)),10)};
+
+    N=hist3(X,'Edges',edges);
+    % hist3(X,'Edges',edges)
+    xlabel("Axon Phase Angle")
+    ylabel("Axon Amplitude")
+    zlabel("Soma Burst Spike Counts")
+
+    ax=gca;
+    ax.YScale="log";
+    probsStack(:,:,nBursts)=N;
+
+    somaSpikeAmplitudes{nBursts}=highAmps;
+    somaSpikePhases{nBursts}=highPhaseAngles;
+end
+
+figure
+meanCounts=sum(probsStack,3);
+histogram2('XBinEdges',[0:40:360],'YBinEdges',logspace(log10(thetaAmpThresh),log10(max(LFPAmplitude)),10),'BinCounts',meanCounts(1:9,1:9))
+xlabel("Axon Phase Angle")
+ylabel("Axon Amplitude")
+zlabel("Soma Spike Counts")
+
+ax=gca;
+ax.YScale="log";
+
+figure
+scatter(cell2mat(somaSpikePhases),cell2mat(somaSpikeAmplitudes))
+ax=gca;
+ax.YScale="log";
+
+covPhaseAmp=cov(cell2mat(somaSpikePhases),log10(cell2mat(somaSpikeAmplitudes)));
+%% Find how many theta oscilations above threshold have no bursts vs how many have a burst A8
+
+nOscWithBurst=sum(any(probsStack,[1,2])); % 101
+nOscWithoutBurst=sum(~any(probsStack,[1,2])); %39
+
+%% 3D Graph of E9 AT START OF WELL BURST ONLY PHASE AND AMP SPIKES PER BURST CUMMULATIVE DIST
+
+well_burst_bounds=well_spike_dyn.BurstBounds{well_spike_dyn.fi==6 & well_spike_dyn.channel_name=="E9"};
+well_burst_starts=well_burst_bounds(:,1);
+% remap burst starts to new sampling rate
+well_burst_starts=round(remap(well_burst_starts,1,length(t),1,length(re_t)));
+logicalBurstStarts=zeros(1,length(re_t));
+logicalBurstStarts(well_burst_starts)=1;
+
+figure
+wellBurstStartAngles=LFPAngles(logicalBurstStarts & logicalValidLFPs);
+% wellBurstStartAngles=[wellBurstStartAngles-360,wellBurstStartAngles];
+wellBurstStartAmp=LFPAmplitude(logicalBurstStarts & logicalValidLFPs);
+
+thetaAmpThresh=std(LFPAmplitude);
+
+%repeat for spikes per burst
+repwellBurstStartAngles=[];
+repwellBurstStartAmp=[];
+
+burstIdx=ismembertol(well_burst_starts,find(logicalBurstStarts & logicalValidLFPs),1e-10);
+burstIdx=find(burstIdx);
+well_spb=well_spike_dyn.SpikeperBurst{well_spike_dyn.fi==6 & well_spike_dyn.channel_name=="E9"};
+
+for nBursts=1:length(wellBurstStartAngles)
+    repwellBurstStartAngles=[repwellBurstStartAngles,repmat(wellBurstStartAngles(nBursts),1,well_spb(burstIdx(nBursts)))];
+    repwellBurstStartAmp=[repwellBurstStartAmp,repmat(wellBurstStartAmp(nBursts),1,well_spb(burstIdx(nBursts)))];
+end
+
+X=[repwellBurstStartAngles;repwellBurstStartAmp]';
+edges={[0:40:360],logspace(log10(thetaAmpThresh),log10(max(LFPAmplitude)),10)};
+
+hist3(X,'Edges',edges,'CDataMode','manual','FaceColor','interp')
+xlabel("Axon Phase Angle (deg)")
+ylabel("Axon Burst Start Amplitude (uV)")
+zlabel("Cummulative Soma Spikes Per Burst")
+
+xlim([0,360])
+yticks(0:200:1200)
+ylim([(thetaAmpThresh),max(LFPAmplitude)])
+
+ax=gca;
+ax.YScale="log";
+%% 3D Graph of E9 spikes in bursts
+
+%find burst starts
+well_burst_bounds=well_spike_dyn.BurstBounds{well_spike_dyn.fi==6 & well_spike_dyn.channel_name=="E9"};
+well_burst_starts=well_burst_bounds(:,1);
+% remap burst starts to new sampling rate
+well_burst_starts=round(remap(well_burst_starts,1,length(t),1,length(re_t)));
+logicalBurstStarts=zeros(1,length(re_t));
+logicalBurstStarts(well_burst_starts)=1;
+
+%define burst ends
+well_burst_ends=well_burst_bounds(:,2);
+% remap burst starts to new sampling rate
+well_burst_ends=round(remap(well_burst_ends,1,length(t),1,length(re_t)));
+logicalBurstEnds=zeros(1,length(re_t));
+logicalBurstEnds(well_burst_ends)=1;
+
+%find burst starts/ends in high LFP
+highAmpBurstStarts=logicalBurstStarts & logicalValidLFPs;
+
+%create new bursting start/end matrix
+burstIdx=ismembertol(well_burst_starts,find(highAmpBurstStarts),1e-10);
+highBursts=[well_burst_starts(burstIdx,:),well_burst_ends(burstIdx,:)];
+
+% get spikes from channel
+spikes=load("D:\Brewer lab data\Slow Oscillation 4 Chamber 5 Tunnel Arrays\4x 210715 210806\1\Well Spikes\4x 33168 210715 21div 210806_1.h5\E9_spikes.mat");
 spikes=spikes.index/1000;
 fs=25000;
 t=0:1/fs:t_rec-(1/fs);
