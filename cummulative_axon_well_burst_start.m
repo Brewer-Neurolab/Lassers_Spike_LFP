@@ -1,4 +1,4 @@
-function cummulative_axon_well_burst_start(t,re_t,logicalValidLFPs,LFPAmplitude,LFPAngles,fi,sourceElec,targetElecs,well_spike_dyn)
+function miTable=cummulative_axon_well_burst_start(t,re_t,logicalValidLFPs,LFPAmplitude,LFPAngles,fi,sourceElec,targetElecs,well_spike_dyn)
 
 bincount_cells=[];
 binxcenters=[];
@@ -55,6 +55,15 @@ for nElec=1:length(targetElecs)
 
 end
 
-phase_amp_heatmap_formatter(bincount_cells,binxcenters,binxedges,binycenters,binyedges,sourceElec,targetElecs)
+sourceProps.LFPAmps=LFPAmplitude;
+sourceProps.LFPAngles=LFPAngles;
+sourceProps.logicalValidLFPs=logicalValidLFPs;
+sourceProps.well_spike_dyn=well_spike_dyn;
+sourceProps.fi=fi;
+sourceProps.t=t;
+sourceProps.re_t=re_t;
+sourceProps.nIter=100;
+
+miTable=phase_amp_heatmap_formatter(bincount_cells,binxcenters,binxedges,binycenters,binyedges,sourceElec,targetElecs,sourceProps);
 
 end
