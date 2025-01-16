@@ -64,6 +64,8 @@ sourceProps.t=t;
 sourceProps.re_t=re_t;
 sourceProps.nIter=100;
 
+%comment either out for testing
 miTable=phase_amp_heatmap_formatter(bincount_cells,binxcenters,binxedges,binycenters,binyedges,sourceElec,targetElecs,sourceProps);
+% miTable=phase_amp_heatmap_formatter_percent(bincount_cells,binxcenters,binxedges,binycenters,binyedges,sourceElec,targetElecs,sourceProps);
 
 end
