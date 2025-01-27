@@ -11,7 +11,12 @@ data=data.filtered_data;
 t_rec=300;
 re_t=0:1/re_fs:t_rec-(1/re_fs);
 
-well_spike_dyn=load("D:\Brewer lab data\Slow Oscillation 4 Chamber 5 Tunnel Arrays\4x 210715 210806\1\Well Spikes\well_spike_dynamics_table_hfs_3-5.mat");
+%3.5 SD
+% well_spike_dyn=load("D:\Brewer lab data\Slow Oscillation 4 Chamber 5 Tunnel Arrays\4x 210715 210806\1\Well Spikes\well_spike_dynamics_table_hfs_3-5.mat");
+
+%5SD
+well_spike_dyn=load("D:\Brewer lab data\Slow Oscillation 4 Chamber 5 Tunnel Arrays\4x 210715 210806\1\Well Spikes 5SD Min\well_spike_dynamics_table_hfs.mat")
+
 well_spike_dyn=well_spike_dyn.well_spike_dynamics_table;
 %% plot axon data tagged
 
@@ -23,7 +28,7 @@ nsamples_combine_thresh=[];
 minLFPCycles=0.2; %default 2
 minLFPLength=(1/10)*minLFPCycles*re_fs;
 
-[LFPEndPts,LFPAmplitude,LFPHilbert]=identify_lfps(data,re_fs,t_rec,minLFPLength,minLFPCycles,nsamples_combine_thresh);
+[LFPEndPts,LFPAmplitude,LFPHilbert]=identify_lfps(data,re_fs,t_rec,.4,minLFPLength,minLFPCycles,nsamples_combine_thresh);
 LFPAngles=wrapTo360(angle(LFPHilbert)*(180/pi));
 
 rng('default')
@@ -562,6 +567,9 @@ ylim([(thetaAmpThresh),max(LFPAmplitude)])
 
 ax=gca;
 ax.YScale="log";
+%% Test function
+targetElecs=well_spike_dyn.channel_name(well_spike_dyn.fi==5 & well_spike_dyn.regi==3);
+cummulative_axon_well_burst_start(t,re_t,logicalValidLFPs,LFPAmplitude,LFPAngles,5,"G10",targetElecs,well_spike_dyn)
 %% 3D Graph of E10 AT START OF WELL BURST ONLY PHASE AND AMP SPIKES PER BURST CUMMULATIVE DIST NOT WITHIN AXONAL HIGH OSCILLATIONS
 %cummulative dist may be most accurate
 

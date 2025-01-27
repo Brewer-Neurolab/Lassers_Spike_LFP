@@ -17,6 +17,8 @@ for nElec=1:length(targetElecs)
     logicalBurstStarts=zeros(1,length(re_t));
     logicalBurstStarts(well_burst_starts)=1;
 
+    nBurstsCounter(nElec)=sum(logicalBurstStarts & logicalValidLFPs);
+
     % figure
     wellBurstStartAngles=LFPAngles(logicalBurstStarts & logicalValidLFPs);
     % wellBurstStartAngles=[wellBurstStartAngles-360,wellBurstStartAngles];
@@ -38,12 +40,12 @@ for nElec=1:length(targetElecs)
     end
 
     X=[repwellBurstStartAngles;repwellBurstStartAmp]';
-    edges={[0:40:360],logspace(log10(thetaAmpThresh),log10(max(LFPAmplitude)),10)};
+    edges={[0:40:360],logspace(log10(thetaAmpThresh),log10(max(LFPAmplitude)),4)};
 
     if ~isempty(X)
         %calculates pxy
         [N]=hist3(X,'Edges',edges,'CDataMode','manual','FaceColor','interp');
-        bincount_cells_xy{nElec}=N(1:9,1:9);
+        bincount_cells_xy{nElec}=N(1:9,1:3);
         binxcenters{nElec}=convert_edges_2_centers([0:40:360]);
         binycenters{nElec}=10.^convert_edges_2_centers(log10(logspace(log10(thetaAmpThresh),log10(max(LFPAmplitude)),10)));
         binxedges{nElec}=[0:40:360];
@@ -77,6 +79,6 @@ sourceProps.nIter=100;
 % miTable=phase_amp_heatmap_formatter(bincount_cells_xy,binxcenters,binxedges,binycenters,binyedges,sourceElec,targetElecs,sourceProps);
 % miTable=phase_amp_heatmap_formatter_percent(bincount_cells,binxcenters,binxedges,binycenters,binyedges,sourceElec,targetElecs,sourceProps);
 miTable=mutualInfo_heatmap_formatter(bincount_cells_xy,binxcenters,binxedges,...
-    binycenters,binyedges,bincount_cells_x,bincount_cells_y,sourceElec,targetElecs,sourceProps);
+    binycenters,binyedges,bincount_cells_x,bincount_cells_y,sourceElec,targetElecs,sourceProps,nBurstsCounter);
 
 end

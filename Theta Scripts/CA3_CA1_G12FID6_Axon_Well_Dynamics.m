@@ -23,7 +23,7 @@ nsamples_combine_thresh=[];
 minLFPCycles=0.2; %default 2
 minLFPLength=(1/10)*minLFPCycles*re_fs;
 
-[LFPEndPts,LFPAmplitude,LFPHilbert]=identify_lfps(data,re_fs,t_rec,minLFPLength,minLFPCycles,nsamples_combine_thresh);
+[LFPEndPts,LFPAmplitude,LFPHilbert]=identify_lfps(data,re_fs,t_rec,0.2,minLFPLength,minLFPCycles,nsamples_combine_thresh);
 LFPAngles=wrapTo360(angle(LFPHilbert)*(180/pi));
 
 rng('default')
