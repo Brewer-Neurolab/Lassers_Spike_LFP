@@ -20,10 +20,10 @@ well_spike_dyn=well_spike_dyn.well_spike_dynamics_table;
 nsamples_combine_thresh=0.01*re_fs;
 
 %define min lfp length as 2x shortest theta cycle
-minLFPCycles=1; %default 2
+minLFPCycles=3; %default 2
 minLFPLength=(1/300)*minLFPCycles*re_fs;
 
-[LFPEndPts,LFPAmplitude,LFPHilbert]=identify_lfps(data,re_fs,t_rec,minLFPLength,minLFPCycles,nsamples_combine_thresh);
+[LFPEndPts,LFPAmplitude,LFPHilbert]=identify_lfps(data,re_fs,t_rec,0.75, minLFPLength,minLFPCycles,nsamples_combine_thresh);
 LFPAngles=wrapTo360(angle(LFPHilbert)*(180/pi));
 
 rng('default')
@@ -62,7 +62,7 @@ wellSpikeAngles=[wellSpikeAngles-360,wellSpikeAngles];
 
 %% Cummulative Hig Amp Burst start
 targetElecs=well_spike_dyn.channel_name(well_spike_dyn.fi==6 & well_spike_dyn.regi==4);
-cummulative_axon_well_burst_start(t,re_t,logicalValidLFPs,LFPAmplitude,LFPAngles,6,"G12",targetElecs,well_spike_dyn)
+cummulative_axon_well_burst_start(t,re_t,logicalValidLFPs,LFPAmplitude,LFPAngles,6,"G12",targetElecs,well_spike_dyn, 9, 0.75)
 
 %% Cummulative Low Amp Burst start
 targetElecs=well_spike_dyn.channel_name(well_spike_dyn.fi==6 & well_spike_dyn.regi==4);
