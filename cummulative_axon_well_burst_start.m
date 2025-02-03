@@ -1,4 +1,4 @@
-function miTable=cummulative_axon_well_burst_start(t,re_t,logicalValidLFPs,LFPAmplitude,LFPAngles,fi,sourceElec,targetElecs,well_spike_dyn,nYbin)
+function miTable=cummulative_axon_well_burst_start(t,re_t,logicalValidLFPs,LFPAmplitude,LFPAngles,fi,sourceElec,targetElecs,well_spike_dyn,nYbin,thresh_mult)
 
 bincount_cells_xy=[];
 bincount_cells_x=[];
@@ -24,7 +24,7 @@ for nElec=1:length(targetElecs)
     % wellBurstStartAngles=[wellBurstStartAngles-360,wellBurstStartAngles];
     wellBurstStartAmp=LFPAmplitude(logicalBurstStarts & logicalValidLFPs);
 
-    thetaAmpThresh=std(LFPAmplitude);
+    thetaAmpThresh=std(LFPAmplitude)*thresh_mult;
 
     %repeat for spikes per burst
     repwellBurstStartAngles=[];
@@ -40,19 +40,19 @@ for nElec=1:length(targetElecs)
     end
 
     X=[repwellBurstStartAngles;repwellBurstStartAmp]';
-    edges={[0:40:360],logspace(log10(thetaAmpThresh),log10(max(LFPAmplitude)),nYbin+1)};
+    edges={[0:18:360],logspace(log10(thetaAmpThresh),log10(max(LFPAmplitude)),nYbin+1)};
 
     if ~isempty(X)
         %calculates pxy
         [N]=hist3(X,'Edges',edges,'CDataMode','manual','FaceColor','interp');
-        bincount_cells_xy{nElec}=N(1:9,1:nYbin);
-        binxcenters{nElec}=convert_edges_2_centers([0:40:360]);
+        bincount_cells_xy{nElec}=N(1:20,1:nYbin);
+        binxcenters{nElec}=convert_edges_2_centers([0:18:360]);
         binycenters{nElec}=10.^convert_edges_2_centers(log10(logspace(log10(thetaAmpThresh),log10(max(LFPAmplitude)),nYbin+1)));
-        binxedges{nElec}=[0:40:360];
+        binxedges{nElec}=[0:18:360];
         binyedges{nElec}=logspace(log10(thetaAmpThresh),log10(max(LFPAmplitude)),nYbin+1);
 
         %calculate px
-        bincount_cells_x{nElec}=histcounts(repwellBurstStartAngles,[0:40:360]);
+        bincount_cells_x{nElec}=histcounts(repwellBurstStartAngles,[0:18:360]);
 
         %calculate py
         bincount_cells_y{nElec}=histcounts(repwellBurstStartAmp,logspace(log10(thetaAmpThresh),log10(max(LFPAmplitude)),nYbin+1));
