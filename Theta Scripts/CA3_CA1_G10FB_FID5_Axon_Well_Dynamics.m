@@ -569,7 +569,7 @@ ax=gca;
 ax.YScale="log";
 %% Test function
 targetElecs=well_spike_dyn.channel_name(well_spike_dyn.fi==5 & well_spike_dyn.regi==3);
-MI_tbl=cummulative_axon_well_burst_start(t,re_t,logicalValidLFPs,LFPAmplitude,LFPAngles,5,"G10",targetElecs,well_spike_dyn,44);
+MI_tbl=cummulative_axon_well_burst_start(t,re_t,logicalValidLFPs,LFPAmplitude,LFPAngles,5,"G10",targetElecs,well_spike_dyn,44,1);
 
 %% scatter plot SPB vs Burst Length
 scatter_BL_v_SPB(well_spike_dyn,MI_tbl)
