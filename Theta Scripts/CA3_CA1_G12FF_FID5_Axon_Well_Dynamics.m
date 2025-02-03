@@ -5,17 +5,17 @@ clear
 clc
 close all
 
-data=load("D:\Brewer lab data\Slow Oscillation 4 Chamber 5 Tunnel Arrays\4x 210715 210806\1\downsampled tunnels\theta\4x 33152 210715 21div 210806_1_mat_files\G10.mat");
+data=load("D:\Brewer lab data\Slow Oscillation 4 Chamber 5 Tunnel Arrays\4x 210715 210806\1\downsampled tunnels\theta\4x 33152 210715 21div 210806_1_mat_files\G12.mat");
 re_fs=data.re_fs;
 data=data.filtered_data;
 t_rec=300;
 re_t=0:1/re_fs:t_rec-(1/re_fs);
 
 %3.5 SD
-% well_spike_dyn=load("D:\Brewer lab data\Slow Oscillation 4 Chamber 5 Tunnel Arrays\4x 210715 210806\1\Well Spikes\well_spike_dynamics_table_hfs_3-5.mat");
+well_spike_dyn=load("D:\Brewer lab data\Slow Oscillation 4 Chamber 5 Tunnel Arrays\4x 210715 210806\1\Well Spikes\well_spike_dynamics_table_hfs_3-5.mat");
 
 %5SD
-well_spike_dyn=load("D:\Brewer lab data\Slow Oscillation 4 Chamber 5 Tunnel Arrays\4x 210715 210806\1\Well Spikes 5SD Min\well_spike_dynamics_table_hfs.mat")
+% well_spike_dyn=load("D:\Brewer lab data\Slow Oscillation 4 Chamber 5 Tunnel Arrays\4x 210715 210806\1\Well Spikes 5SD Min\well_spike_dynamics_table_hfs.mat")
 
 well_spike_dyn=well_spike_dyn.well_spike_dynamics_table;
 %% plot axon data tagged
@@ -216,7 +216,7 @@ for nElec=1:length(CA3_Electrodes)
 
     %update MI table
     MI_Table.fi(row)=5;
-    MI_Table.Tunnel_Electrode(row)="G10";
+    MI_Table.Tunnel_Electrode(row)="G12";
     MI_Table.Tunnel_reg(row)="CA3-CA1";
     MI_Table.is_ff(row)=0;
     MI_Table.Well_Electrode(row)=CA3_Electrodes(nElec);
@@ -394,7 +394,7 @@ for nElec=1:length(CA3_Electrodes)
 
     if isempty(highBursts)
         MI_Table.fi(row)=5;
-        MI_Table.Tunnel_Electrode(row)="G10";
+        MI_Table.Tunnel_Electrode(row)="G12";
         MI_Table.Tunnel_reg(row)="CA3-CA1";
         MI_Table.is_ff(row)=0;
         MI_Table.Well_Electrode(row)=CA3_Electrodes(nElec);
@@ -468,7 +468,7 @@ for nElec=1:length(CA3_Electrodes)
 
     %update MI table
     MI_Table.fi(row)=6;
-    MI_Table.Tunnel_Electrode(row)="G10";
+    MI_Table.Tunnel_Electrode(row)="G12";
     MI_Table.Tunnel_reg(row)="CA3-CA1";
     MI_Table.is_ff(row)=0;
     MI_Table.Well_Electrode(row)=CA3_Electrodes(nElec);
@@ -568,11 +568,10 @@ ylim([(thetaAmpThresh),max(LFPAmplitude)])
 ax=gca;
 ax.YScale="log";
 %% Test function
-targetElecs=well_spike_dyn.channel_name(well_spike_dyn.fi==5 & well_spike_dyn.regi==3);
-MI_tbl=cummulative_axon_well_burst_start(t,re_t,logicalValidLFPs,LFPAmplitude,LFPAngles,5,"G10",targetElecs,well_spike_dyn,3);
-
+targetElecs=well_spike_dyn.channel_name(well_spike_dyn.fi==5 & well_spike_dyn.regi==4);
+MI_tbl=cummulative_axon_well_burst_start(t,re_t,logicalValidLFPs,LFPAmplitude,LFPAngles,5,"G12",targetElecs,well_spike_dyn,9);
 %% scatter plot SPB vs Burst Length
-scatter_BL_v_SPB(well_spike_dyn,MI_tbl)
+scatter_BL_v_SPB(well_spike_dyn,MI_tbl(MI_tbl.pval~="NA",:))
 %% 3D Graph of E10 AT START OF WELL BURST ONLY PHASE AND AMP SPIKES PER BURST CUMMULATIVE DIST NOT WITHIN AXONAL HIGH OSCILLATIONS
 %cummulative dist may be most accurate
 
@@ -732,7 +731,7 @@ for nStack=1:size(probsStack,3)
     xlabel("Axon Phase Angle")
     ylabel("Axon Amplitude")
     zlabel("Soma Spike Counts")
-    title("Axon High Amplitude: G10")
+    title("Axon High Amplitude: G12")
 end
 close(v)
 %% Find how many theta oscilations above threshold have no bursts vs how many have a burst E10
