@@ -45,7 +45,7 @@ for nElec=1:length(targetElecs)
     if ~isempty(X)
         %calculates pxy
         [N]=hist3(X,'Edges',edges,'CDataMode','manual','FaceColor','interp');
-        bincount_cells_xy{nElec}=N(1:nYbin,1:9);
+        bincount_cells_xy{nElec}=N(1:9,1:nYbin);
         binxcenters{nElec}=convert_edges_2_centers([0:40:360]);
         binycenters{nElec}=10.^convert_edges_2_centers(log10(logspace(log10(thetaAmpThresh),log10(max(LFPAmplitude)),nYbin+1)));
         binxedges{nElec}=[0:40:360];
@@ -79,6 +79,6 @@ sourceProps.nIter=100;
 % miTable=phase_amp_heatmap_formatter(bincount_cells_xy,binxcenters,binxedges,binycenters,binyedges,sourceElec,targetElecs,sourceProps);
 % miTable=phase_amp_heatmap_formatter_percent(bincount_cells,binxcenters,binxedges,binycenters,binyedges,sourceElec,targetElecs,sourceProps);
 miTable=mutualInfo_heatmap_formatter(bincount_cells_xy,binxcenters,binxedges,...
-    binycenters,binyedges,bincount_cells_x,bincount_cells_y,sourceElec,targetElecs,sourceProps,nBurstsCounter);
+    binycenters,binyedges,bincount_cells_x,bincount_cells_y,sourceElec,targetElecs,sourceProps,nBurstsCounter,nYbin);
 
 end
