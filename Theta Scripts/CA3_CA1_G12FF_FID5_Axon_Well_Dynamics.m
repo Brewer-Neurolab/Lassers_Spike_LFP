@@ -19,16 +19,16 @@ well_spike_dyn=load("D:\Brewer lab data\Slow Oscillation 4 Chamber 5 Tunnel Arra
 
 well_spike_dyn=well_spike_dyn.well_spike_dynamics_table;
 %% plot axon data tagged
-
+thresh_mult=.4;
 %define max number of samples for combining LFPs
-% nsamples_combine_thresh=(1/10)*re_fs*3; %1 cycle of fastest theta
-nsamples_combine_thresh=[];
+nsamples_combine_thresh=(1/10)*re_fs; %1 cycle of fastest theta
+% nsamples_combine_thresh=[];
 
 %define min lfp length as 2x shortest theta cycle
-minLFPCycles=0.2; %default 2
+minLFPCycles=2; %default 2
 minLFPLength=(1/10)*minLFPCycles*re_fs;
 
-[LFPEndPts,LFPAmplitude,LFPHilbert]=identify_lfps(data,re_fs,t_rec,.4,minLFPLength,minLFPCycles,nsamples_combine_thresh);
+[LFPEndPts,LFPAmplitude,LFPHilbert]=identify_lfps(data,re_fs,t_rec,thresh_mult,minLFPLength,minLFPCycles,nsamples_combine_thresh);
 LFPAngles=wrapTo360(angle(LFPHilbert)*(180/pi));
 
 rng('default')
@@ -569,9 +569,9 @@ ax=gca;
 ax.YScale="log";
 %% Test function
 targetElecs=well_spike_dyn.channel_name(well_spike_dyn.fi==5 & well_spike_dyn.regi==4);
-MI_tbl=cummulative_axon_well_burst_start(t,re_t,logicalValidLFPs,LFPAmplitude,LFPAngles,5,"G12",targetElecs,well_spike_dyn,9);
+MI_tbl=cummulative_axon_well_burst_start(t,re_t,logicalValidLFPs,LFPAmplitude,LFPAngles,5,"G12",targetElecs,well_spike_dyn,40,thresh_mult);
 %% scatter plot SPB vs Burst Length
-scatter_BL_v_SPB(well_spike_dyn,MI_tbl(MI_tbl.pval~="NA",:))
+scatter_BL_v_SPB(well_spike_dyn,MI_tbl(MI_tbl.pval~="NA",:),t,re_t,logicalValidLFPs)
 %% 3D Graph of E10 AT START OF WELL BURST ONLY PHASE AND AMP SPIKES PER BURST CUMMULATIVE DIST NOT WITHIN AXONAL HIGH OSCILLATIONS
 %cummulative dist may be most accurate
 
