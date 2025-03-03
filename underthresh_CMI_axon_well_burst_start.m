@@ -1,4 +1,4 @@
-function miTable=CMI_axon_well_burst_start(t,re_t,logicalValidLFPs,LFPAmplitude,LFPAngles,fi,sourceElec,targetElecs,well_spike_dyn,nYbin,thresh_mult)
+function miTable=underthresh_CMI_axon_well_burst_start(t,re_t,logicalValidLFPs,LFPAmplitude,LFPAngles,fi,sourceElec,targetElecs,well_spike_dyn,nYbin,thresh_mult)
 
 bincount_cells_x=[];
 bincount_cells_y=[];
@@ -23,12 +23,12 @@ for nElec=1:length(targetElecs)
     logicalBurstStarts=zeros(1,length(re_t));
     logicalBurstStarts(well_burst_starts)=1;
 
-    nBurstsCounter(nElec)=sum(logicalBurstStarts & logicalValidLFPs);
+    nBurstsCounter(nElec)=sum(logicalBurstStarts & ~logicalValidLFPs);
 
     % figure
-    wellBurstStartAngles=LFPAngles(logicalBurstStarts & logicalValidLFPs);
+    wellBurstStartAngles=LFPAngles(logicalBurstStarts & ~logicalValidLFPs);
     % wellBurstStartAngles=[wellBurstStartAngles-360,wellBurstStartAngles];
-    wellBurstStartAmp=LFPAmplitude(logicalBurstStarts & logicalValidLFPs);
+    wellBurstStartAmp=LFPAmplitude(logicalBurstStarts & ~logicalValidLFPs);
 
     thetaAmpThresh=std(LFPAmplitude)*thresh_mult;
 
@@ -41,7 +41,7 @@ for nElec=1:length(targetElecs)
     countwellBurstStartAmp=[];
     countwellSPB=[];
 
-    burstIdx=ismembertol(well_burst_starts,find(logicalBurstStarts & logicalValidLFPs),1e-10);
+    burstIdx=ismembertol(well_burst_starts,find(logicalBurstStarts & ~logicalValidLFPs),1e-10);
     burstIdx=find(burstIdx);
     well_spb=well_spike_dyn.SpikeperBurst{well_spike_dyn.fi==fi & well_spike_dyn.channel_name==targetElecs(nElec)};
 
@@ -58,7 +58,7 @@ for nElec=1:length(targetElecs)
     nbins_z=40;
 
     X=[repwellBurstStartAngles;repwellBurstStartAmp]';
-    edges={linspace(0,360,nbins_x+1),logspace(log10(thetaAmpThresh),log10(max(LFPAmplitude)),nYbin+1)};
+    edges={linspace(0,360,nbins_x+1),logspace(log10(min(LFPAmplitude)),log10(thetaAmpThresh),nYbin+1)};
 
     bincount_cells_xy=[];
 
@@ -68,18 +68,18 @@ for nElec=1:length(targetElecs)
         [N]=hist3(X,'Edges',edges,'CDataMode','manual','FaceColor','interp');
         bincount_cells_xy{nElec}=N(1:nbins_x,1:nYbin);
         binxcenters{nElec}=convert_edges_2_centers(linspace(0,360,nbins_x+1));
-        binycenters{nElec}=10.^convert_edges_2_centers(log10(logspace(log10(thetaAmpThresh),log10(max(LFPAmplitude)),nYbin+1)));
+        binycenters{nElec}=10.^convert_edges_2_centers(log10(logspace(log10(min(LFPAmplitude)),log10(thetaAmpThresh),nYbin+1)));
         binzcenters{nElec}=convert_edges_2_centers(linspace(0,max(countwellSPB),nbins_z));
 
         binxedges{nElec}=linspace(0,360,nbins_x+1);
-        binyedges{nElec}=logspace(log10(thetaAmpThresh),log10(max(LFPAmplitude)),nYbin+1);
+        binyedges{nElec}=logspace(log10(min(LFPAmplitude)),log10(thetaAmpThresh),nYbin+1);
         binzedges{nElec}=linspace(0,max(countwellSPB),nbins_z);
 
         %calculate px
         bincount_cells_x{nElec}=histcounts(countwellBurstStartAngles,linspace(0,360,nbins_x+1));
 
         %calculate py
-        bincount_cells_y{nElec}=histcounts(countwellBurstStartAmp,logspace(log10(thetaAmpThresh),log10(max(LFPAmplitude)),nYbin+1));
+        bincount_cells_y{nElec}=histcounts(countwellBurstStartAmp,logspace(log10(min(LFPAmplitude)),log10(thetaAmpThresh),nYbin+1));
 
         %calculate pz
         bincount_cells_z{nElec}=histcounts(countwellSPB,binzedges{nElec});
@@ -140,7 +140,7 @@ sourceProps.nIter=100;
 %comment any out for testing
 % miTable=phase_amp_heatmap_formatter(bincount_cells_xy,binxcenters,binxedges,binycenters,binyedges,sourceElec,targetElecs,sourceProps);
 % miTable=phase_amp_heatmap_formatter_percent(bincount_cells,binxcenters,binxedges,binycenters,binyedges,sourceElec,targetElecs,sourceProps);
-miTable=CMI_heatmap_formatter(jpxyz,jpxz,jpyz,bincount_cells_xy,binxcenters,binxedges,...
+miTable=underthresh_CMI_heatmap_formatter(jpxyz,jpxz,jpyz,bincount_cells_xy,binxcenters,binxedges,...
     binycenters,binyedges,binzcenters,binzedges,bincount_cells_x,bincount_cells_y,...
     bincount_cells_z,sourceElec,targetElecs,sourceProps,nBurstsCounter,nYbin);
 

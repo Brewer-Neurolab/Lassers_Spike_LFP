@@ -74,7 +74,7 @@ ax=gca;
 ax.FontSize=16;
 %% Test function
 targetElecs=well_spike_dyn.channel_name(well_spike_dyn.fi==5 & well_spike_dyn.regi==3);
-% MI_tbl=cummulative_axon_well_burst_start(t,re_t,logicalValidLFPs,LFPAmplitude,LFPAngles,5,"L6",targetElecs,well_spike_dyn,40,thresh_mult);
-MI_tbl=CMI_axon_well_burst_start(t,re_t,logicalValidLFPs,LFPAmplitude,LFPAngles,5,"L6",targetElecs,well_spike_dyn,40,thresh_mult);
+MI_tbl=cummulative_axon_well_burst_start(t,re_t,logicalValidLFPs,LFPAmplitude,LFPAngles,5,"L6",targetElecs,well_spike_dyn,40,thresh_mult);
+% MI_tbl=CMI_axon_well_burst_start(t,re_t,logicalValidLFPs,LFPAmplitude,LFPAngles,5,"L6",targetElecs,well_spike_dyn,8,thresh_mult);
 %% scatter plot SPB vs Burst Length
 scatter_BL_v_SPB(well_spike_dyn,MI_tbl(MI_tbl.pval~="NA",:),t,re_t,logicalValidLFPs)

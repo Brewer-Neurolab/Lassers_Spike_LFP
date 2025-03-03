@@ -1,4 +1,4 @@
-function [pval,MI_Vec]=shuffleCMI(myMI,LFPAmps,LFPAngles,logicalValidLFPs,well_spike_dyn,myElec,fi,t,re_t,nIter,nYbin)
+function [pval,MI_Vec]=underthresh_shuffleCMI(myMI,LFPAmps,LFPAngles,logicalValidLFPs,well_spike_dyn,myElec,fi,t,re_t,nIter,nYbin)
 MI_Vec=[];
 pval=[];
 
@@ -22,15 +22,15 @@ for nPerm=1:nPermutations
     randPermAmps=randperm(length(LFPAmps));
     shuffledLFPAmps(nPerm,:)=LFPAmps(randPermAmps);
 
-    wellBurstStartAngles=shuffledLFPAngles(nPerm,logicalBurstStarts & logicalValidLFPs);
-    wellBurstStartAmp=shuffledLFPAmps(nPerm,logicalBurstStarts & logicalValidLFPs);
+    wellBurstStartAngles=shuffledLFPAngles(nPerm,logicalBurstStarts & ~logicalValidLFPs);
+    wellBurstStartAmp=shuffledLFPAmps(nPerm,logicalBurstStarts & ~logicalValidLFPs);
 
     %repeat for spikes per burst
     repwellBurstStartAngles=[];
     repwellBurstStartAmp=[];
     repwellSPB=[];
 
-    burstIdx=ismembertol(well_burst_starts,find(logicalBurstStarts & logicalValidLFPs),1e-10);
+    burstIdx=ismembertol(well_burst_starts,find(logicalBurstStarts & ~logicalValidLFPs),1e-10);
     burstIdx=find(burstIdx);
     well_spb=well_spike_dyn.SpikeperBurst{well_spike_dyn.fi==fi & well_spike_dyn.channel_name==myElec};
 
@@ -47,7 +47,7 @@ for nPerm=1:nPermutations
     nbins_z=40;
 
     X=[repwellBurstStartAngles;repwellBurstStartAmp]';
-    edges={linspace(0,360,nbins_x+1),logspace(log10(min(repwellBurstStartAmp)),log10(max(LFPAmps)),nYbin+1)};
+    edges={linspace(0,360,nbins_x+1),logspace(log10(min(LFPAmps)),log10(thetaAmpThresh),nYbin+1)};
 
     if ~isempty(repwellBurstStartAngles)
 
@@ -55,7 +55,7 @@ for nPerm=1:nPermutations
         [N]=hist3(X,'Edges',edges,'CDataMode','manual','FaceColor','interp');
         bincount_cells_xy=N(1:nbins_x,1:nYbin);
         binxcenters=convert_edges_2_centers(linspace(0,360,nbins_x+1));
-        binycenters=10.^convert_edges_2_centers(log10(logspace(log10(min(repwellBurstStartAmp)),log10(max(LFPAmps)),nYbin+1)));
+        binycenters=10.^convert_edges_2_centers(log10(logspace(log10(min(LFPAmps)),log10(thetaAmpThresh),nYbin+1)));
         binzcenters=convert_edges_2_centers(linspace(0,max(repwellSPB),nbins_z));
 
         binxedges=linspace(0,360,nbins_x+1);
@@ -66,7 +66,7 @@ for nPerm=1:nPermutations
         bincount_cells_x=histcounts(repwellBurstStartAngles,linspace(0,360,nbins_x+1));
 
         %calculate py
-        bincount_cells_y=histcounts(repwellBurstStartAmp,logspace(log10(min(repwellBurstStartAmp)),log10(max(LFPAmps)),nYbin+1));
+        bincount_cells_y=histcounts(repwellBurstStartAmp,logspace(log10(min(LFPAmps)),log10(thetaAmpThresh),nYbin+1));
 
         %calculate pz
         bincount_cells_z=histcounts(repwellSPB,binzedges);
