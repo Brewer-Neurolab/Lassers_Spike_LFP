@@ -113,6 +113,9 @@ for nElec=18%1:length(targetElecs)
     ylabel("Spikes")
     xlabel("Amplitude uV")
     set(gca,"FontSize",12)
+    [h,p]=kstest(log10(wellBurstAmp));
+    disp(h)
+    disp(p)
 
     nexttile
     binnedSPBAmp=discretize(wellBurstStartAmp,ampEdges);
@@ -141,7 +144,7 @@ for nElec=18%1:length(targetElecs)
     xlim([min(ampEdges),max(ampEdges)])
     xticks(ampEdges(1:2:end))
     xticklabels(round(ampEdges(1:2:end)))
-    title("Well Spikes Per Burst VS Burst Start LFP Amplitude")
+    title("Spikes/Burst vs Burst Start LFP uV")
     
     xlabel("Amplitude uV")
     set(gca,"FontSize",12)
@@ -193,7 +196,7 @@ for nElec=18%1:length(targetElecs)
     pbaspect([2,1,1])
     xlim([min(angleEdges),max(angleEdges)])
     xticks(angleEdges)
-    title("Well Spikes Per Burst VS Burst Start LFP Angle")
+    title("Spikes/Burst vs Burst Start LFP Angle")
     
     xlabel("Angles")
     set(gca,"FontSize",12)
@@ -213,7 +216,7 @@ for nElec=18%1:length(targetElecs)
     % ylabel("Angle")
     % xlabel("Amplitude uV")
     % set(gca,"FontSize",16)
-    X=[[wellBurstAngles,-wellBurstAngles];[wellBurstAmp,wellBurstAmp]]';
+    X=[[wellBurstAngles,wellBurstAngles-360];[wellBurstAmp,wellBurstAmp]]';
     edges={[-360:18:360],logspace(log10(thetaAmpThresh),log10(max(LFPAmplitude)),nYbin+1)};
     if ~isempty(X)
         %calculates pxy
@@ -258,6 +261,7 @@ for nElec=18%1:length(targetElecs)
         binycenters{nElec}=[];
         binxedges{nElec}=[];
         binyedges{nElec}=[];
+        continue
     end
 
     % nexttile([3,4])
@@ -271,7 +275,7 @@ for nElec=18%1:length(targetElecs)
     ylim([min(binyedges{nElec}),max(binyedges{nElec})])
     xlim([-180,180])
     % axis square
-    pbaspect([2,1,1])
+    pbaspect([2,1.3,1])
 
     set(gca,"FontSize",18)
     xticks(binxedges{nElec}(1:2:end))
@@ -285,7 +289,9 @@ for nElec=18%1:length(targetElecs)
     % cb.Layout.Tile = 'east';
     cb.Limits=myCLim;
     clim(myCLim)
-    cb.Ticks=round(linspace(0,maxHeightAll,5));
+    if maxHeightAll>=5
+        cb.Ticks=round(linspace(0,maxHeightAll,5));
+    end
 
     title(tf,targetElecs(nElec),"FontSize",18)
     % %repeat for spikes per burst

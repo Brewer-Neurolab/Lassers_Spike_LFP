@@ -20,7 +20,7 @@ well_spike_dyn=load("D:\Brewer lab data\Slow Oscillation 4 Chamber 5 Tunnel Arra
 
 well_spike_dyn=well_spike_dyn.well_spike_dynamics_table;
 %% plot axon data tagged
-thresh_mult=.4;
+thresh_mult=1;
 %define max number of samples for combining LFPs
 nsamples_combine_thresh=(1/10)*re_fs; %1 cycle of fastest theta
 % nsamples_combine_thresh=[];
