@@ -39,7 +39,7 @@ set(gca,"YScale","log")
 title(tf,sourceElec+" axon distributions")
 
 nIter=100;
-for nElec=18%1:length(targetElecs)
+for nElec=1:length(targetElecs)
     well_spikes=load(parent_dir+targetElecs(nElec)+"_spikes.mat");
     well_spikes=well_spikes.index/1000; % in seconds
     well_spikes_idx=find(ismembertol(t,well_spikes));
@@ -76,10 +76,6 @@ for nElec=18%1:length(targetElecs)
     % wellBurstStartAngles=[wellBurstStartAngles-360,wellBurstStartAngles];
     wellBurstStartAmp=LFPAmplitude(logicalBurstStarts & logicalValidLFPs);
 
-    %repeat for spikes per burst
-    repwellBurstStartAngles=[];
-    repwellBurstStartAmp=[];
-
     burstIdx=ismembertol(well_burst_starts,find(logicalBurstStarts & logicalValidLFPs),1e-10);
     burstIdx=find(burstIdx);
     well_spb=well_spike_dyn.SpikeperBurst{well_spike_dyn.fi==fi & well_spike_dyn.channel_name==targetElecs(nElec)};
@@ -90,12 +86,12 @@ for nElec=18%1:length(targetElecs)
     %     repwellBurstStartAmp=[repwellBurstStartAmp,repmat(wellBurstStartAmp(nBursts),1,well_spb(burstIdx(nBursts)))];
     % end
 
-    figure
-    tf=tiledlayout(3,2,"Padding","tight","TileSpacing","tight");
+    figure('Name',targetElecs(nElec)+" amp",'NumberTitle','off')
+    % tf=tiledlayout(3,2,"Padding","tight","TileSpacing","tight");
     % well spikes vs amplitude
-    nexttile
+    % nexttile
     histogram(wellBurstAmp,ampEdges)
-    ampProbs=histcounts(wellBurstStartAmp,ampEdges,"Normalization","probability");
+    ampProbs=histcounts(wellBurstAmp,ampEdges,"Normalization","probability");
     ampMI=modulationIndex(ampProbs);
     ampPval=shuffleLFP_ModIdx(ampMI,LFPAmplitude,find(logicalValidLFPs),logicalValidSpikes,ampEdges,nIter);
     set(gca,"XScale","log")
@@ -113,11 +109,12 @@ for nElec=18%1:length(targetElecs)
     ylabel("Spikes")
     xlabel("Amplitude uV")
     set(gca,"FontSize",12)
-    [h,p]=kstest(log10(wellBurstAmp));
-    disp(h)
-    disp(p)
+    % [h,p]=kstest(log10(wellBurstAmp));
+    % disp(h)
+    % disp(p)
 
-    nexttile
+    % nexttile
+    figure('Name',targetElecs(nElec)+" spb amp",'NumberTitle','off')
     binnedSPBAmp=discretize(wellBurstStartAmp,ampEdges);
     spbAmpMean=[];
     spbAmpSE=[];
@@ -144,7 +141,13 @@ for nElec=18%1:length(targetElecs)
     xlim([min(ampEdges),max(ampEdges)])
     xticks(ampEdges(1:2:end))
     xticklabels(round(ampEdges(1:2:end)))
+    % spbAmpMI=modulationIndex(spbAmpMean./sum(spbAmpMean));
+    % [spbAmpPval,spbAmpMIVec]=shuffleSPB_ModIdx(spbAmpMI,LFPAmplitude,logicalValidLFPs,burstIdx,ampEdges,ampCenters,well_spb,nIter);
+    [spbAmpPval,spbAmpMdl]=slope_significance(wellBurstStartAmp,well_spb);
+    mdlY=spbAmpMdl.Coefficients.Estimate(2).*ampEdges+spbAmpMdl.Coefficients.Estimate(1);
+    plot(ampEdges,mdlY,'--r')
     title("Spikes/Burst vs Burst Start LFP uV")
+    subtitle("p="+round(spbAmpPval,2))
     
     xlabel("Amplitude uV")
     set(gca,"FontSize",12)
@@ -153,7 +156,8 @@ for nElec=18%1:length(targetElecs)
     ylim([min(currentYLim),max(currentYLim)*1.1])
 
     %well spikes vs angle
-    nexttile
+    % nexttile
+    figure('Name',targetElecs(nElec)+" angle",'NumberTitle','off')
     histogram([wellBurstAngles-360,wellBurstAngles],angleEdges2Cycle)
     angleProbs=histcounts(wellBurstStartAngles,angleEdges,"Normalization","probability");
     angleMI=modulationIndex(angleProbs);
@@ -172,7 +176,8 @@ for nElec=18%1:length(targetElecs)
     xlabel("Angle")
     set(gca,"FontSize",12)
 
-    nexttile
+    % nexttile
+    figure('Name',targetElecs(nElec)+" spb angle",'NumberTitle','off')
     binnedSPBAngle=discretize(wellBurstStartAngles,angleEdges);
     spbAngleMean=[];
     spbAngleSE=[];
@@ -196,7 +201,11 @@ for nElec=18%1:length(targetElecs)
     pbaspect([2,1,1])
     xlim([min(angleEdges),max(angleEdges)])
     xticks(angleEdges)
+    [spbAnglePval,spbAngleMdl]=slope_significance(wellBurstStartAngles,well_spb);
+    mdlY=spbAngleMdl.Coefficients.Estimate(2).*angleEdges+spbAngleMdl.Coefficients.Estimate(1);
+    plot(angleEdges,mdlY,'--r')
     title("Spikes/Burst vs Burst Start LFP Angle")
+    subtitle("p="+round(spbAnglePval,2))
     
     xlabel("Angles")
     set(gca,"FontSize",12)
@@ -265,7 +274,8 @@ for nElec=18%1:length(targetElecs)
     end
 
     % nexttile([3,4])
-    nexttile
+    % nexttile
+    figure('Name',targetElecs(nElec)+" heatmap",'NumberTitle','off')
     maxHeightAll=cellfun(@(x) max(x,[],"all"),bincount_cells_xy,'UniformOutput',false);
     maxHeightAll(cellfun(@isempty,maxHeightAll))={0};
     maxHeightAll=max(cell2mat(maxHeightAll));
@@ -274,8 +284,10 @@ for nElec=18%1:length(targetElecs)
     imagesc(binxcenters{nElec},binycenters{nElec},flipud(rot90(bincount_cells_xy{nElec},1)),myCLim)
     ylim([min(binyedges{nElec}),max(binyedges{nElec})])
     xlim([-180,180])
-    % axis square
-    pbaspect([2,1.3,1])
+    axis square
+    % pbaspect([2,1.3,1])
+    xlabel("Angle (degrees)")
+    ylabel("Amplitude uV")
 
     set(gca,"FontSize",18)
     xticks(binxedges{nElec}(1:2:end))
@@ -289,6 +301,7 @@ for nElec=18%1:length(targetElecs)
     % cb.Layout.Tile = 'east';
     cb.Limits=myCLim;
     clim(myCLim)
+    ylabel(cb,'#Spikes','FontSize',18,'Rotation',270)
     if maxHeightAll>=5
         cb.Ticks=round(linspace(0,maxHeightAll,5));
     end

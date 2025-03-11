@@ -82,3 +82,7 @@ MI_tbl=mutualInfo_sourceLFP_targetSpike(t,re_t,logicalValidLFPs,LFPAmplitude,LFP
     "D:\Brewer lab data\Slow Oscillation 4 Chamber 5 Tunnel Arrays\4x 210715 210806\1\Well Spikes\4x 33152 210715 21div 210806_1.h5\");
 %% scatter plot SPB vs Burst Length
 scatter_BL_v_SPB(well_spike_dyn,MI_tbl(MI_tbl.pval~="NA",:),t,re_t,logicalValidLFPs)
+%% Regression test
+targetElecs=well_spike_dyn.channel_name(well_spike_dyn.fi==5 & well_spike_dyn.regi==3);
+sourceLFP_targetSpike_relations(t,re_t,logicalValidLFPs,LFPAmplitude,LFPAngles,5,"M6",targetElecs,well_spike_dyn,20,thresh_mult,...
+    "D:\Brewer lab data\Slow Oscillation 4 Chamber 5 Tunnel Arrays\4x 210715 210806\1\Well Spikes\4x 33152 210715 21div 210806_1.h5\")
