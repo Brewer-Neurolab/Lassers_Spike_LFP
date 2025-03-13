@@ -114,46 +114,46 @@ for nElec=1:length(targetElecs)
     % disp(p)
 
     % nexttile
-    figure('Name',targetElecs(nElec)+" spb amp",'NumberTitle','off')
-    binnedSPBAmp=discretize(wellBurstStartAmp,ampEdges);
-    spbAmpMean=[];
-    spbAmpSE=[];
-    for nBins=1:length(ampCenters)
-        if sum(binnedSPBAmp==nBins)>0
-            spbAmpMean(nBins)=mean(well_spb(binnedSPBAmp==nBins));
-            spbSD=std(well_spb(binnedSPBAmp==nBins));
-            spbAmpSE(nBins)=spbSD/sqrt(sum(binnedSPBAmp==nBins));
-        else
-            spbAmpMean(nBins)=0;
-            spbAmpSE(nBins)=0;
-        end
-    end
-    % bar(ampCenters,spbAmpMean,1)
-    h=histogram();
-    h.BinEdges=ampEdges;
-    h.BinCounts=spbAmpMean;
-    hold on
-    errorbar(ampCenters,spbAmpMean,spbAmpSE,"LineStyle","none","Color",'k')
-    % scatter(wellBurstStartAmp,well_spb(burstIdx))
-    set(gca,"XScale","log")
-    % axis square
-    pbaspect([2,1,1])
-    xlim([min(ampEdges),max(ampEdges)])
-    xticks(ampEdges(1:2:end))
-    xticklabels(round(ampEdges(1:2:end)))
-    % spbAmpMI=modulationIndex(spbAmpMean./sum(spbAmpMean));
-    % [spbAmpPval,spbAmpMIVec]=shuffleSPB_ModIdx(spbAmpMI,LFPAmplitude,logicalValidLFPs,burstIdx,ampEdges,ampCenters,well_spb,nIter);
-    [spbAmpPval,spbAmpMdl]=slope_significance(wellBurstStartAmp,well_spb);
-    mdlY=spbAmpMdl.Coefficients.Estimate(2).*ampEdges+spbAmpMdl.Coefficients.Estimate(1);
-    plot(ampEdges,mdlY,'--r')
-    title("Spikes/Burst vs Burst Start LFP uV")
-    subtitle("p="+round(spbAmpPval,2))
-    
-    xlabel("Amplitude uV")
-    set(gca,"FontSize",12)
-    ylabel("Spikes per Burst","FontSize",10)
-    currentYLim=ylim;
-    ylim([min(currentYLim),max(currentYLim)*1.1])
+    % figure('Name',targetElecs(nElec)+" spb amp",'NumberTitle','off')
+    % binnedSPBAmp=discretize(wellBurstStartAmp,ampEdges);
+    % spbAmpMean=[];
+    % spbAmpSE=[];
+    % for nBins=1:length(ampCenters)
+    %     if sum(binnedSPBAmp==nBins)>0
+    %         spbAmpMean(nBins)=mean(well_spb(binnedSPBAmp==nBins));
+    %         spbSD=std(well_spb(binnedSPBAmp==nBins));
+    %         spbAmpSE(nBins)=spbSD/sqrt(sum(binnedSPBAmp==nBins));
+    %     else
+    %         spbAmpMean(nBins)=0;
+    %         spbAmpSE(nBins)=0;
+    %     end
+    % end
+    % % bar(ampCenters,spbAmpMean,1)
+    % h=histogram();
+    % h.BinEdges=ampEdges;
+    % h.BinCounts=spbAmpMean;
+    % hold on
+    % errorbar(ampCenters,spbAmpMean,spbAmpSE,"LineStyle","none","Color",'k')
+    % % scatter(wellBurstStartAmp,well_spb(burstIdx))
+    % set(gca,"XScale","log")
+    % % axis square
+    % pbaspect([2,1,1])
+    % xlim([min(ampEdges),max(ampEdges)])
+    % xticks(ampEdges(1:2:end))
+    % xticklabels(round(ampEdges(1:2:end)))
+    % % spbAmpMI=modulationIndex(spbAmpMean./sum(spbAmpMean));
+    % % [spbAmpPval,spbAmpMIVec]=shuffleSPB_ModIdx(spbAmpMI,LFPAmplitude,logicalValidLFPs,burstIdx,ampEdges,ampCenters,well_spb,nIter);
+    % [spbAmpPval,spbAmpMdl]=slope_significance(wellBurstStartAmp,well_spb);
+    % mdlY=spbAmpMdl.Coefficients.Estimate(2).*ampEdges+spbAmpMdl.Coefficients.Estimate(1);
+    % plot(ampEdges,mdlY,'--r')
+    % title("Spikes/Burst vs Burst Start LFP uV")
+    % subtitle("p="+round(spbAmpPval,2))
+    % 
+    % xlabel("Amplitude uV")
+    % set(gca,"FontSize",12)
+    % ylabel("Spikes per Burst","FontSize",10)
+    % currentYLim=ylim;
+    % ylim([min(currentYLim),max(currentYLim)*1.1])
 
     %well spikes vs angle
     % nexttile
@@ -177,39 +177,39 @@ for nElec=1:length(targetElecs)
     set(gca,"FontSize",12)
 
     % nexttile
-    figure('Name',targetElecs(nElec)+" spb angle",'NumberTitle','off')
-    binnedSPBAngle=discretize(wellBurstStartAngles,angleEdges);
-    spbAngleMean=[];
-    spbAngleSE=[];
-    for nBins=1:length(ampCenters)
-        if sum(binnedSPBAngle==nBins)>0
-            spbAngleMean(nBins)=mean(well_spb(binnedSPBAngle==nBins));
-            spbSD=std(well_spb(binnedSPBAngle==nBins));
-            spbAngleSE(nBins)=spbSD/sqrt(sum(binnedSPBAngle==nBins));
-        else
-            spbAngleMean(nBins)=0;
-            spbAngleSE(nBins)=0;
-        end
-    end
-    h=histogram();
-    h.BinEdges=angleEdges;
-    h.BinCounts=spbAngleMean;
-    hold on
-    errorbar(angleCenters,spbAngleMean,spbAngleSE,"LineStyle","none","Color",'k')
-    % scatter(wellBurstStartAngles,well_spb(burstIdx))
-    % axis square
-    pbaspect([2,1,1])
-    xlim([min(angleEdges),max(angleEdges)])
-    xticks(angleEdges)
-    [spbAnglePval,spbAngleMdl]=slope_significance(wellBurstStartAngles,well_spb);
-    mdlY=spbAngleMdl.Coefficients.Estimate(2).*angleEdges+spbAngleMdl.Coefficients.Estimate(1);
-    plot(angleEdges,mdlY,'--r')
-    title("Spikes/Burst vs Burst Start LFP Angle")
-    subtitle("p="+round(spbAnglePval,2))
-    
-    xlabel("Angles")
-    set(gca,"FontSize",12)
-    ylabel("Spikes per Burst","FontSize",10)
+    % figure('Name',targetElecs(nElec)+" spb angle",'NumberTitle','off')
+    % binnedSPBAngle=discretize(wellBurstStartAngles,angleEdges);
+    % spbAngleMean=[];
+    % spbAngleSE=[];
+    % for nBins=1:length(ampCenters)
+    %     if sum(binnedSPBAngle==nBins)>0
+    %         spbAngleMean(nBins)=mean(well_spb(binnedSPBAngle==nBins));
+    %         spbSD=std(well_spb(binnedSPBAngle==nBins));
+    %         spbAngleSE(nBins)=spbSD/sqrt(sum(binnedSPBAngle==nBins));
+    %     else
+    %         spbAngleMean(nBins)=0;
+    %         spbAngleSE(nBins)=0;
+    %     end
+    % end
+    % h=histogram();
+    % h.BinEdges=angleEdges;
+    % h.BinCounts=spbAngleMean;
+    % hold on
+    % errorbar(angleCenters,spbAngleMean,spbAngleSE,"LineStyle","none","Color",'k')
+    % % scatter(wellBurstStartAngles,well_spb(burstIdx))
+    % % axis square
+    % pbaspect([2,1,1])
+    % xlim([min(angleEdges),max(angleEdges)])
+    % xticks(angleEdges)
+    % [spbAnglePval,spbAngleMdl]=slope_significance(wellBurstStartAngles,well_spb);
+    % mdlY=spbAngleMdl.Coefficients.Estimate(2).*angleEdges+spbAngleMdl.Coefficients.Estimate(1);
+    % plot(angleEdges,mdlY,'--r')
+    % title("Spikes/Burst vs Burst Start LFP Angle")
+    % subtitle("p="+round(spbAnglePval,2))
+    % 
+    % xlabel("Angles")
+    % set(gca,"FontSize",12)
+    % ylabel("Spikes per Burst","FontSize",10)
 
     %axon amplitude and angle at well spikes
     % nexttile([1,2])
@@ -266,20 +266,24 @@ for nElec=1:length(targetElecs)
 
     else
         bincount_cells_xy{nElec}=[];
-        binxcenters{nElec}=[];
-        binycenters{nElec}=[];
-        binxedges{nElec}=[];
-        binyedges{nElec}=[];
+        binxcenters{nElec}=convert_edges_2_centers([-360:18:360]);
+        binycenters{nElec}=10.^convert_edges_2_centers(log10(logspace(log10(thetaAmpThresh),log10(max(LFPAmplitude)),nYbin+1)));
+        binxedges{nElec}=[-360:18:360];
+        binyedges{nElec}=logspace(log10(thetaAmpThresh),log10(max(LFPAmplitude)),nYbin+1);
         continue
     end
+end
 
+maxHeightAll=cellfun(@(x) max(x,[],"all"),bincount_cells_xy,'UniformOutput',false);
+maxHeightAll(cellfun(@isempty,maxHeightAll))={0};
+maxHeightAll=max(cell2mat(maxHeightAll));
+
+for nElec=1:length(targetElecs)
     % nexttile([3,4])
     % nexttile
     myFig=figure('Name',targetElecs(nElec)+" heatmap",'NumberTitle','off');
     myFig.Position(3)=679.2;
-    maxHeightAll=cellfun(@(x) max(x,[],"all"),bincount_cells_xy,'UniformOutput',false);
-    maxHeightAll(cellfun(@isempty,maxHeightAll))={0};
-    maxHeightAll=max(cell2mat(maxHeightAll));
+
 
     myCLim=[0,maxHeightAll];
     imagesc(binxcenters{nElec},binycenters{nElec},flipud(rot90(bincount_cells_xy{nElec},1)),myCLim)
@@ -308,17 +312,6 @@ for nElec=1:length(targetElecs)
     end
 
     title(tf,targetElecs(nElec),"FontSize",18)
-    % %repeat for spikes per burst
-    % repwellBurstStartAngles=[];
-    % repwellBurstStartAmp=[];
-    % 
-    
-    % well_spb=well_spike_dyn.SpikeperBurst{well_spike_dyn.fi==fi & well_spike_dyn.channel_name==targetElecs(nElec)};
-    % 
-    % for nBursts=1:length(wellBurstAngles)
-    %     repwellBurstStartAngles=[repwellBurstStartAngles,repmat(wellBurstAngles(nBursts),1,well_spb(burstIdx(nBursts)))];
-    %     repwellBurstStartAmp=[repwellBurstStartAmp,repmat(wellBurstAmp(nBursts),1,well_spb(burstIdx(nBursts)))];
-    % end
 end
 
 end
