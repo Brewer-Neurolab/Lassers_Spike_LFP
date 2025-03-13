@@ -275,7 +275,8 @@ for nElec=1:length(targetElecs)
 
     % nexttile([3,4])
     % nexttile
-    figure('Name',targetElecs(nElec)+" heatmap",'NumberTitle','off')
+    myFig=figure('Name',targetElecs(nElec)+" heatmap",'NumberTitle','off');
+    myFig.Position(3)=679.2;
     maxHeightAll=cellfun(@(x) max(x,[],"all"),bincount_cells_xy,'UniformOutput',false);
     maxHeightAll(cellfun(@isempty,maxHeightAll))={0};
     maxHeightAll=max(cell2mat(maxHeightAll));
@@ -284,7 +285,7 @@ for nElec=1:length(targetElecs)
     imagesc(binxcenters{nElec},binycenters{nElec},flipud(rot90(bincount_cells_xy{nElec},1)),myCLim)
     ylim([min(binyedges{nElec}),max(binyedges{nElec})])
     xlim([-180,180])
-    axis square
+    % axis square
     % pbaspect([2,1.3,1])
     xlabel("Angle (degrees)")
     ylabel("Amplitude uV")
