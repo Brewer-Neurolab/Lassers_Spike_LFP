@@ -86,6 +86,7 @@ for nElec=1:length(targetElecs)
     %     repwellBurstStartAmp=[repwellBurstStartAmp,repmat(wellBurstStartAmp(nBursts),1,well_spb(burstIdx(nBursts)))];
     % end
 
+    %% Amplitude MI
     figure('Name',targetElecs(nElec)+" amp",'NumberTitle','off')
     % tf=tiledlayout(3,2,"Padding","tight","TileSpacing","tight");
     % well spikes vs amplitude
@@ -104,7 +105,7 @@ for nElec=1:length(targetElecs)
     if ampPval<1/nIter
         subtitle("mod idx="+round(ampMI,2)+" p<"+1/nIter)
     else
-        subtitle("mod idx="+round(ampMI,2)+" p="+ampPval)
+        subtitle("mod idx="+round(ampMI,2,"significant")+" p="+ampPval)
     end
     ylabel("Spikes")
     xlabel("Amplitude uV")
@@ -155,11 +156,12 @@ for nElec=1:length(targetElecs)
     % currentYLim=ylim;
     % ylim([min(currentYLim),max(currentYLim)*1.1])
 
+    %% Angle MI
     %well spikes vs angle
     % nexttile
     figure('Name',targetElecs(nElec)+" angle",'NumberTitle','off')
     histogram([wellBurstAngles-360,wellBurstAngles],angleEdges2Cycle)
-    angleProbs=histcounts(wellBurstStartAngles,angleEdges,"Normalization","probability");
+    angleProbs=histcounts(wellBurstAngles,angleEdges,"Normalization","probability");
     angleMI=modulationIndex(angleProbs);
     anglePval=shuffleLFP_ModIdx(angleMI,LFPAngles,find(logicalValidLFPs),logicalValidSpikes,angleEdges,nIter);
     % axis square
@@ -311,7 +313,53 @@ for nElec=1:length(targetElecs)
         cb.Ticks=round(linspace(0,maxHeightAll,5));
     end
 
-    title(tf,targetElecs(nElec),"FontSize",18)
+    % myMutInfo=mutualInfo(bincount_cells_xy{nElec}/sum(bincount_cells_xy{nElec},"all"),...
+    %     bincount_cells_x{nElec}/sum(bincount_cells_x{nElec}),...
+    %     bincount_cells_y{nElec}/sum(bincount_cells_y{nElec}),...
+    %     sum(bincount_cells_xy{nElec},"all"));
+    % if myMutInfo<=1/nIter
+    %     myMutInfo=0;
+    % end
+    % pval=shuffleMultivariateMutInfo(myMutInfo,LFPAmplitude,LFPAngles,logicalValidLFPs,...
+    %     well_spike_dyn,targetElecs(nElec),fi,t,re_t,nIter,nYbin);
+
+    % rng('default')
+    % MIVec=[];
+    % for i=1:nIter
+    %     % dataIdx=find(logicalValidLFPs);
+    %     validAmps=LFPAmplitude(logicalValidLFPs);
+    %     validAngles=LFPAngles(logicalValidLFPs);
+    %     myPerm=randperm(length(validAmps));
+    %     randAmps=validAmps(myPerm);
+    %     randAmps=randAmps(1:length(find(logicalValidSpikes)));
+    %     randAngles=validAngles(myPerm);
+    %     randAngles=randAngles(1:length(find(logicalValidSpikes)));
+    %     X=[[randAngles,randAngles-360];[randAmps,randAmps]]';
+    %     edges={[-180:18:180],logspace(log10(thetaAmpThresh),log10(max(LFPAmplitude)),nYbin+1)};
+    %     [N]=hist3(X,'Edges',edges,'CDataMode','manual','FaceColor','interp');
+    %     rand_bincount_cells_xy=N(1:20,1:nYbin);
+    %     %calculate px
+    %     rand_bincount_cells_x=histcounts(randAngles,[-180:18:180]);
+    % 
+    %     %calculate py
+    %     rand_bincount_cells_y=histcounts(randAmps,logspace(log10(thetaAmpThresh),log10(max(LFPAmplitude)),nYbin+1));
+    % 
+    %     myRandMutInfo=mutualInfo(rand_bincount_cells_xy/sum(rand_bincount_cells_xy,"all"),...
+    %         rand_bincount_cells_x/sum(rand_bincount_cells_x),...
+    %         rand_bincount_cells_y/sum(rand_bincount_cells_y),...
+    %         sum(rand_bincount_cells_xy,"all"));
+    %     MIVec(i)=myRandMutInfo;
+    % end
+    % 
+    % if ~isempty(MIVec)
+    %     pval=sum(MIVec>=myMutInfo)/length(MIVec);
+    % else
+    %     pval=NaN;
+    % end
+    % 
+    % % title(tf,targetElecs(nElec),"FontSize",18)
+    % title("p="+pval,"FontSize",18)
+
 end
 
 end
