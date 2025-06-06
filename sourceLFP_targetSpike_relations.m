@@ -1,4 +1,4 @@
-function sourceLFP_targetSpike_relations(t,re_t,logicalValidLFPs,LFPAmplitude,LFPAngles,fi,sourceElec,targetElecs,well_spike_dyn,nYbin,thresh_mult,parent_dir)
+function sourceLFP_targetSpike_relations(t,re_t,logicalValidLFPs,LFPAmplitude,LFPAngles,fi,sourceElec,targetElecs,well_spike_dyn,nYbin,thresh_mult,parent_dir,save_dir)
 
 thetaAmpThresh=std(LFPAmplitude)*thresh_mult;
 ampEdges=logspace(log10(thetaAmpThresh),log10(max(LFPAmplitude)),nYbin+1);
@@ -155,7 +155,8 @@ for nElec=1:length(targetElecs)
     % ylabel("Spikes per Burst","FontSize",10)
     % currentYLim=ylim;
     % ylim([min(currentYLim),max(currentYLim)*1.1])
-
+    
+    saveas(gcf,fullfile(save_dir,"AmpMI "+sourceElec+"-"+targetElecs(nElec)+" FID "+fi),"png")
     %% Angle MI
     %well spikes vs angle
     % nexttile
@@ -274,6 +275,7 @@ for nElec=1:length(targetElecs)
         binyedges{nElec}=logspace(log10(thetaAmpThresh),log10(max(LFPAmplitude)),nYbin+1);
         continue
     end
+    saveas(gcf,fullfile(save_dir,"AngleMI "+sourceElec+"-"+targetElecs(nElec)+" FID "+fi),"png")
 end
 
 maxHeightAll=cellfun(@(x) max(x,[],"all"),bincount_cells_xy,'UniformOutput',false);
@@ -359,7 +361,7 @@ for nElec=1:length(targetElecs)
     % 
     % % title(tf,targetElecs(nElec),"FontSize",18)
     % title("p="+pval,"FontSize",18)
-
+    saveas(gcf,fullfile(save_dir,"HeatMap "+sourceElec+"-"+targetElecs(nElec)+" FID "+fi),"png")
 end
 
 end

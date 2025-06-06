@@ -7,7 +7,8 @@ close all
 
 data=load("D:\Brewer lab data\Slow Oscillation 4 Chamber 5 Tunnel Arrays\4x 210715 210806\1\downsampled tunnels\theta\4x 33152 210715 21div 210806_1_mat_files\G12.mat");
 
-re_fs=data.re_fs;
+% re_fs=data.re_fs;
+re_fs=1000;
 data=data.filtered_data;
 t_rec=300;
 re_t=0:1/re_fs:t_rec-(1/re_fs);
@@ -580,7 +581,8 @@ MI_tbl=mutualInfo_sourceLFP_targetSpike(t,re_t,logicalValidLFPs,LFPAmplitude,LFP
 %% Regression tests
 targetElecs=well_spike_dyn.channel_name(well_spike_dyn.fi==5 & well_spike_dyn.regi==4);
 sourceLFP_targetSpike_relations(t,re_t,logicalValidLFPs,LFPAmplitude,LFPAngles,5,"G12",targetElecs,well_spike_dyn,20,thresh_mult,...
-    "D:\Brewer lab data\Slow Oscillation 4 Chamber 5 Tunnel Arrays\4x 210715 210806\1\Well Spikes\4x 33152 210715 21div 210806_1.h5\")
+    "D:\Brewer lab data\Slow Oscillation 4 Chamber 5 Tunnel Arrays\4x 210715 210806\1\Well Spikes\4x 33152 210715 21div 210806_1.h5\",...
+    "C:\Users\lasss\Documents\Research\Brewer Lab work\Code\Lassers_Spike_LFP\Images\Theta")
 %% 3D Graph of E10 AT START OF WELL BURST ONLY PHASE AND AMP SPIKES PER BURST CUMMULATIVE DIST NOT WITHIN AXONAL HIGH OSCILLATIONS
 %cummulative dist may be most accurate
 

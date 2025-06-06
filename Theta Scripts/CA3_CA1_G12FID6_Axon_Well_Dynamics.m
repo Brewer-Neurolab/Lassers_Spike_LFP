@@ -6,7 +6,8 @@ clc
 close all
 
 data=load("D:\Brewer lab data\Slow Oscillation 4 Chamber 5 Tunnel Arrays\4x 210715 210806\1\downsampled tunnels\Theta\4x 33168 210715 21div 210806_1_mat_files\G12.mat");
-re_fs=data.re_fs;
+%re_fs=data.re_fs;
+re_fs=1000;
 data=data.filtered_data;
 t_rec=300;
 re_t=0:1/re_fs:t_rec-(1/re_fs);
