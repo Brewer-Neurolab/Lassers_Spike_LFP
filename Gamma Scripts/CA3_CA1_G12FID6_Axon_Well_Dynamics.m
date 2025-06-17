@@ -7,7 +7,12 @@ close all
 
 data=load("C:\Users\ssk78\Desktop\Brewer LFP\Tunnels\High_Gamma\4x 33168 210715 21div 210806_1_mat_files\G12.mat");
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 re_fs=data.re_fs;
+=======
+%re_fs=data.re_fs;
+re_fs = 1000;
+>>>>>>> Stashed changes
 =======
 %re_fs=data.re_fs;
 re_fs = 1000;
@@ -19,7 +24,11 @@ t_rec=300;
 re_t=0:1/re_fs:t_rec-(1/re_fs);
 
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 well_spike_dyn=load("C:\Users\ssk78\Desktop\Brewer LFP\well_spike_dynamics_table_hfs_3-5.mat");
+=======
+well_spike_dyn=load("C:\Users\ssk78\UC Irvine\BME-Brewer Lab-SPO - Documents\Sam Lassers\Data\Brewer lab data\Slow Oscillation 4 Chamber 5 Tunnel Arrays\4x 210715 210806\1\Well Spikes\well_spike_dynamics_table_hfs_3-5.mat");
+>>>>>>> Stashed changes
 =======
 well_spike_dyn=load("C:\Users\ssk78\UC Irvine\BME-Brewer Lab-SPO - Documents\Sam Lassers\Data\Brewer lab data\Slow Oscillation 4 Chamber 5 Tunnel Arrays\4x 210715 210806\1\Well Spikes\well_spike_dynamics_table_hfs_3-5.mat");
 >>>>>>> Stashed changes
@@ -29,7 +38,11 @@ thresh = 1;
 %define max number of samples for combining LFPs
 % nsamples_combine_thresh=(1/10)*re_fs*3; %1 cycle of fastest theta
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 nsamples_combine_thresh=0.01*re_fs;
+=======
+nsamples_combine_thresh=[re_fs*0.05];
+>>>>>>> Stashed changes
 =======
 nsamples_combine_thresh=[re_fs*0.05];
 >>>>>>> Stashed changes
@@ -67,7 +80,11 @@ logicalValidLFPs(validLFPIndex)=1;
 % E10, A8, E11, C11
 
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 spikes=load("C:\Users\ssk78\Desktop\Brewer LFP\E10_spikes.mat");
+=======
+spikes=load("C:\Users\ssk78\Downloads\E10_spikes.mat");
+>>>>>>> Stashed changes
 =======
 spikes=load("C:\Users\ssk78\Downloads\E10_spikes.mat");
 >>>>>>> Stashed changes
@@ -86,6 +103,7 @@ wellSpikeAngles=[wellSpikeAngles-360,wellSpikeAngles];
 %% Cummulative Hig Amp Burst start
 targetElecs=well_spike_dyn.channel_name(well_spike_dyn.fi==6 & well_spike_dyn.regi==4);
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 cummulative_axon_well_burst_start(t,re_t,logicalValidLFPs,LFPAmplitude,LFPAngles,6,"G12",targetElecs,well_spike_dyn, 9, 0.75)
 
 %% Cummulative Low Amp Burst start
@@ -93,4 +111,10 @@ targetElecs=well_spike_dyn.channel_name(well_spike_dyn.fi==6 & well_spike_dyn.re
 cummulative_axon_well_burst_start(t,re_t,~logicalValidLFPs,LFPAmplitude,LFPAngles,6,"G12",targetElecs,well_spike_dyn)
 =======
 sourceLFP_targetSpike_relations(t,re_t,logicalValidLFPs,LFPAmplitude,LFPAngles,6,"G12",targetElecs,well_spike_dyn, 20, thresh,"C:\Users\ssk78\UC Irvine\BME-Brewer Lab-SPO - Documents\Sam Lassers\Data\Brewer lab data\Slow Oscillation 4 Chamber 5 Tunnel Arrays\4x 210715 210806\1\Well Spikes\4x 33168 210715 21div 210806_1.h5\")
+>>>>>>> Stashed changes
+=======
+cummulative_axon_well_burst_start(t,re_t,logicalValidLFPs,LFPAmplitude,LFPAngles,6,"G12",targetElecs,well_spike_dyn, 20, thresh)
+%% Cummulative Low Amp Burst start
+targetElecs=well_spike_dyn.channel_name(well_spike_dyn.fi==6 & well_spike_dyn.regi==4);
+cummulative_axon_well_burst_start(t,re_t,~logicalValidLFPs,LFPAmplitude,LFPAngles,6,"G12",targetElecs,well_spike_dyn, 20, thresh,"C:\Users\ssk78\UC Irvine\BME-Brewer Lab-SPO - Documents\Sam Lassers\Data\Brewer lab data\Slow Oscillation 4 Chamber 5 Tunnel Arrays\4x 210715 210806\1\Well Spikes\4x 33168 210715 21div 210806_1.h5\")
 >>>>>>> Stashed changes
