@@ -69,9 +69,15 @@ wellSpikeAngles=LFPAngles(logicalSpikes&logicalValidLFPs);
 wellSpikeAngles=[wellSpikeAngles-360,wellSpikeAngles];
 
 %% Cummulative Hig Amp Burst start
-targetElecs=well_spike_dyn.channel_name(well_spike_dyn.fi==6 & well_spike_dyn.regi==4);
-cummulative_axon_well_burst_start(t,re_t,logicalValidLFPs,LFPAmplitude,LFPAngles,6,"G12",targetElecs,well_spike_dyn, 20, thresh,"C:\Users\ssk78\UC Irvine\BME-Brewer Lab-SPO - Documents\Sam Lassers\Data\Brewer lab data\Slow Oscillation 4 Chamber 5 Tunnel Arrays\4x 210715 210806\1\Well Spikes\4x 33168 210715 21div 210806_1.h5\")
+% targetElecs=well_spike_dyn.channel_name(well_spike_dyn.fi==6 & well_spike_dyn.regi==4);
+% cummulative_axon_well_burst_start(t,re_t,logicalValidLFPs,LFPAmplitude,LFPAngles,6,"G12",targetElecs,well_spike_dyn, 20, thresh,"C:\Users\ssk78\UC Irvine\BME-Brewer Lab-SPO - Documents\Sam Lassers\Data\Brewer lab data\Slow Oscillation 4 Chamber 5 Tunnel Arrays\4x 210715 210806\1\Well Spikes\4x 33168 210715 21div 210806_1.h5\")
 
 %% Cummulative Low Amp Burst start
+% targetElecs=well_spike_dyn.channel_name(well_spike_dyn.fi==6 & well_spike_dyn.regi==4);
+% cummulative_axon_well_burst_start(t,re_t,~logicalValidLFPs,LFPAmplitude,LFPAngles,6,"G12",targetElecs,well_spike_dyn)
+
+%% Regression tests
 targetElecs=well_spike_dyn.channel_name(well_spike_dyn.fi==6 & well_spike_dyn.regi==4);
-cummulative_axon_well_burst_start(t,re_t,~logicalValidLFPs,LFPAmplitude,LFPAngles,6,"G12",targetElecs,well_spike_dyn)
+sourceLFP_targetSpike_relations(t,re_t,logicalValidLFPs,LFPAmplitude,LFPAngles,5,"G12",targetElecs,well_spike_dyn,20,thresh_mult,...
+    "D:\Brewer lab data\Slow Oscillation 4 Chamber 5 Tunnel Arrays\4x 210715 210806\1\Well Spikes\4x 33152 210715 21div 210806_1.h5\",...
+    "C:\Users\lasss\Documents\Research\Brewer Lab work\Code\Lassers_Spike_LFP\Images\Theta")
