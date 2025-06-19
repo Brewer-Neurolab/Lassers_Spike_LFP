@@ -570,6 +570,10 @@ ax.YScale="log";
 %% Test function
 targetElecs=well_spike_dyn.channel_name(well_spike_dyn.fi==1 & well_spike_dyn.regi==4);
 cummulative_axon_well_burst_start(t,re_t,logicalValidLFPs,LFPAmplitude,LFPAngles,1,"G11",targetElecs,well_spike_dyn)
+%% Regression tests
+targetElecs=well_spike_dyn.channel_name(well_spike_dyn.fi==1 & well_spike_dyn.regi==4);
+sourceLFP_targetSpike_relations(t,re_t,logicalValidLFPs,LFPAmplitude,LFPAngles,1,"G11",targetElecs,well_spike_dyn,20,thresh_mult,...
+    "D:\Brewer lab data\Slow Oscillation 4 Chamber 5 Tunnel Arrays\4x 210715 210806\1\Well Spikes\4x 33152 210715 21div 210806_1.h5\")
 %% 3D Graph of E10 AT START OF WELL BURST ONLY PHASE AND AMP SPIKES PER BURST CUMMULATIVE DIST NOT WITHIN AXONAL HIGH OSCILLATIONS
 %cummulative dist may be most accurate
 
