@@ -19,6 +19,8 @@ wells_folders=wells_folders(3:end);
 axon_spikes=load("D:\Brewer lab data\Slow Oscillation 4 Chamber 5 Tunnel Arrays\4x 210715 210806\1\18-Apr-2023_A\allregion_unit_matched_cleaned.mat");
 axon_spikes=axon_spikes.allregion_unit_matched_stim;
 
+interRegions=["EC-DG","DG-CA3","CA3-CA1","CA1-EC","EC-CA3"];
+subregions=["EC","DG","CA3","CA1"];
 ff_axon_tbl=table();
 
 row=1;
@@ -27,17 +29,28 @@ for fi=1:length(axon_spikes)
         if ~isempty(axon_spikes{fi}.up_ff)
             ff_axon_tbl.fi(row)=fi;
             ff_axon_tbl.Subregion(row)=axon_spikes{fi}.Subregion(nelec);
+            ff_axon_tbl.interRegi(row)=find(interRegions==axon_spikes{fi}.Subregion(nelec));
             electrodes=axon_spikes{fi}.("Electrode Pairs")(nelec);
             electrodes=split(electrodes,{'-'});
             ff_axon_tbl.Electrode(row)=electrodes(1);
             tunnelReg=split(axon_spikes{fi}.Subregion(nelec),{'-'});
             ff_axon_tbl.FFReg(row)=tunnelReg(2);
+            ff_axon_tbl.subi(row)=find(subregions==tunnelReg(2));
             row=row+1;
         end
     end
 end
 
+%3.5 SD
+well_spike_dyn=load("D:\Brewer lab data\Slow Oscillation 4 Chamber 5 Tunnel Arrays\4x 210715 210806\1\Well Spikes\well_spike_dynamics_table_hfs_3-5.mat");
+
+%5SD
+% well_spike_dyn=load("D:\Brewer lab data\Slow Oscillation 4 Chamber 5 Tunnel Arrays\4x 210715 210806\1\Well Spikes 5SD Min\well_spike_dynamics_table_hfs.mat")
+
+well_spike_dyn=well_spike_dyn.well_spike_dynamics_table;
 %% Compute GLM
+
+clc
 
 wellElecs=load("D:\Brewer lab data\Slow Oscillation 4 Chamber 5 Tunnel Arrays\4x 210715 210806\1\Well Spikes\matching_table_wells_CW.mat");
 wellElecs=wellElecs.matching_table;
@@ -45,13 +58,13 @@ wellElecs=wellElecs.matching_table;
 glmTblAll=table();
 row=1;
 
-for nFF=[95,96,117]%1:height(ff_axon_tbl)
+for nFF=[95,96,117]%1:%height(ff_axon_tbl)%[95,96,117]
     % Axon Setup
     data=load(fullfile(parent_axons_dir,axons_folders(ff_axon_tbl.fi(nFF)),ff_axon_tbl.Electrode(nFF)+".mat"));
     data=data.data;
     fs=25000;
     t_rec=300;
-    re_fs=2500;
+    re_fs=1000;
     re_t=0:1/re_fs:t_rec-(1/re_fs);
 
     %downsample data
@@ -119,7 +132,15 @@ for nFF=[95,96,117]%1:height(ff_axon_tbl)
     DeltaAngle=angle(DeltaHilbert);
     DeltaAngle(~logicalValidLFPs)=[];
 
+    targetElecs=well_spike_dyn.channel_name(well_spike_dyn.fi==ff_axon_tbl.fi(nFF) & well_spike_dyn.regi==ff_axon_tbl.subi(nFF));
+    sourceLFP_targetSpike_relations(t,re_t,logicalValidLFPs,LFPAmplitude,LFPAngles,ff_axon_tbl.fi(nFF),ff_axon_tbl.Electrode(nFF),targetElecs,well_spike_dyn,20,thresh_mult,...
+        "D:\Brewer lab data\Slow Oscillation 4 Chamber 5 Tunnel Arrays\4x 210715 210806\1\Well Spikes\4x 33152 210715 21div 210806_1.h5\",...
+        "C:\Users\lasss\Documents\Research\Brewer Lab work\Code\Lassers_Spike_LFP\Images\Theta")
+
+    close all
+
     myWellElecs=wellElecs.electrode(wellElecs.subregion==ff_axon_tbl.FFReg(nFF));
+    
     for nWell=1:length(myWellElecs)
         angle_edges=[-pi:pi/180*18:pi];
         % spikes=load("D:\Brewer lab data\Slow Oscillation 4 Chamber 5 Tunnel Arrays\4x 210715 210806\1\Well Spikes\4x 33152 210715 21div 210806_1.h5\A8_spikes.mat");
@@ -167,6 +188,7 @@ for nFF=[95,96,117]%1:height(ff_axon_tbl)
         glmTblAll.target_reg(row)=ff_axon_tbl.FFReg(nFF);
         glmTblAll.target_elec(row)=myWellElecs(nWell);
         glmTblAll.mdl{row}=mdl_del;
+        glmTblAll.mdlPVal(row)=mdl_del.devianceTest.pValue(2);
 
         row=row+1;
 
@@ -174,7 +196,6 @@ for nFF=[95,96,117]%1:height(ff_axon_tbl)
     end
 
 end
-
 
 %% plot log10(p)
 % unique_sources=unique(glmTblAll(:,[1,2,3]));

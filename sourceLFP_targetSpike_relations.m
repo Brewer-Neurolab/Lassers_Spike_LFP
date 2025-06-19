@@ -96,11 +96,17 @@ for nElec=1:length(targetElecs)
     ampMI=modulationIndex(ampProbs);
     ampPval=shuffleLFP_ModIdx(ampMI,LFPAmplitude,find(logicalValidLFPs),logicalValidSpikes,ampEdges,nIter);
     set(gca,"XScale","log")
+    % set(gca,"FontSize",24)
     % axis square
     pbaspect([2,1,1])
     xlim([min(ampEdges),max(ampEdges)])
-    xticks(ampEdges(1:2:end))
-    xticklabels(round(ampEdges(1:2:end)))
+    xticks(ampEdges(1:4:end))
+    xticklabels(round(ampEdges(1:4:end)))
+    set(gca,'XMinorTick','off')
+    ax=gca;
+    ax.LineWidth=4;
+    ax.TickLength=[0.01 0.05];
+
     title("Well Spikes VS Amplitude")
     if ampPval<1/nIter
         subtitle("mod idx="+round(ampMI,2)+" p<"+1/nIter)
@@ -109,7 +115,8 @@ for nElec=1:length(targetElecs)
     end
     ylabel("Spikes")
     xlabel("Amplitude uV")
-    set(gca,"FontSize",12)
+    set(gca,"FontSize",50)
+    set(gca,"Position",[0.13,0.2,0.7750,0.6])
     % [h,p]=kstest(log10(wellBurstAmp));
     % disp(h)
     % disp(p)
@@ -156,7 +163,7 @@ for nElec=1:length(targetElecs)
     % currentYLim=ylim;
     % ylim([min(currentYLim),max(currentYLim)*1.1])
     
-    saveas(gcf,fullfile(save_dir,"AmpMI "+sourceElec+"-"+targetElecs(nElec)+" FID "+fi),"png")
+    saveas(gcf,fullfile(save_dir,"AmpMI "+sourceElec+"-"+targetElecs(nElec)+" FID "+fi+".png"),"png")
     %% Angle MI
     %well spikes vs angle
     % nexttile
@@ -168,7 +175,8 @@ for nElec=1:length(targetElecs)
     % axis square
     pbaspect([2,1,1])
     xlim([-180,180])
-    xticks(angleEdges2Cycle(1:2:end))
+    % xticks(angleEdges2Cycle(1:2:end))
+    xticks([-180,-90,0,90,180])
     title("Well Spikes VS Angle")
     if anglePval<1/nIter
         subtitle("mod idx="+round(angleMI,2)+" p<"+1/nIter)
@@ -177,7 +185,12 @@ for nElec=1:length(targetElecs)
     end
     ylabel("Spikes")
     xlabel("Angle")
-    set(gca,"FontSize",12)
+    xtickangle(0)
+    set(gca,"FontSize",50)
+    set(gca,"Position",[0.13,0.2,0.7750,0.6])
+    ax=gca;
+    ax.LineWidth=4;
+    ax.TickLength=[0.01 0.05];
 
     % nexttile
     % figure('Name',targetElecs(nElec)+" spb angle",'NumberTitle','off')
@@ -298,19 +311,21 @@ for nElec=1:length(targetElecs)
     xlabel("Angle (degrees)")
     ylabel("Amplitude uV")
 
-    set(gca,"FontSize",18)
-    xticks(binxedges{nElec}(1:2:end))
+    set(gca,"FontSize",50)
+    
+    % xticks(binxedges{nElec}(1:2:end))
+    xticks([-180,-90,0,90,180])
     yticks(binyedges{nElec}(1:4:end))
     yticklabels(round(binyedges{nElec}(1:4:end),2,"significant"))
     set(gca,'YDir','normal')
     set(gca,"YScale","log")
 
-    cb = colorbar("FontSize",18);
+    cb = colorbar("FontSize",40);
     colormap hot
     % cb.Layout.Tile = 'east';
     cb.Limits=myCLim;
     clim(myCLim)
-    ylabel(cb,'#Spikes','FontSize',18,'Rotation',270)
+    ylabel(cb,'#Spikes','FontSize',40,'Rotation',270)
     if maxHeightAll>=5
         cb.Ticks=round(linspace(0,maxHeightAll,5));
     end

@@ -4,7 +4,7 @@ clc
 close all
 %load downsampled LFP
 LFP=load("D:\Brewer lab data\Slow Oscillation 4 Chamber 5 Tunnel Arrays\4x 210715 210806\1\downsampled tunnels\Theta\4x 33152 210715 21div 210806_1_mat_files\G12.mat");
-LFP=LFP.re_LFP;
+LFP=LFP.filtered_data;
 spikes=load("D:\Brewer lab data\Slow Oscillation 4 Chamber 5 Tunnel Arrays\4x 210715 210806\1\18-Apr-2023_A\4x 33152 210715 21div 210806_1_mat_files\times_G12.mat");
 spikes=spikes.cluster_class(:,2);
 %5SD spikes
@@ -155,7 +155,7 @@ for nElec=1:length(CA3_Elec)
     [r,l]=xcorr(LFP,wellLFP,re_fs*1,"normalized");
     % [r,l]=xcorr(LFP(logicalValidLFPs),wellLFP(logicalValidLFPs),re_fs*2,"normalized");
     figure
-    plot(l/re_fs*1000,r)
+    plot(l/re_fs*1000,r,"LineWidth",2)
     title(CA3_Elec(nElec))
 
     [~,P]=corrcoef(wellLFP,LFP);
@@ -169,5 +169,11 @@ for nElec=1:length(CA3_Elec)
     xcorr_table.pval(nElec)=P(1,2);
     xlabel("Lag (ms)")
     ylabel("r normalized")
-    set(gca,"FontSize",18)
+    set(gca,"FontSize",40)
+    xlim([-200,200])
+
+    ax=gca;
+    ax.LineWidth=4;
+    ax.TickLength=[0.05 0.05];
+    axis square
 end
