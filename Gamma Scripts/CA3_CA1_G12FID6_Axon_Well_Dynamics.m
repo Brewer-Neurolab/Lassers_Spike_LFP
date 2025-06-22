@@ -74,4 +74,10 @@ cummulative_axon_well_burst_start(t,re_t,logicalValidLFPs,LFPAmplitude,LFPAngles
 
 %% Cummulative Low Amp Burst start
 targetElecs=well_spike_dyn.channel_name(well_spike_dyn.fi==6 & well_spike_dyn.regi==4);
+<<<<<<< Updated upstream
 cummulative_axon_well_burst_start(t,re_t,~logicalValidLFPs,LFPAmplitude,LFPAngles,6,"G12",targetElecs,well_spike_dyn)
+=======
+sourceLFP_targetSpike_relations(t,re_t,logicalValidLFPs,LFPAmplitude,LFPAngles,5,"G12",targetElecs,well_spike_dyn,20,thresh,...
+    "C:\Users\ssk78\UC Irvine\BME-Brewer Lab-SPO - Documents\Sam Lassers\Data\Brewer lab data\Slow Oscillation 4 Chamber 5 Tunnel Arrays\4x 210715 210806\1\Well Spikes\4x 33168 210715 21div 210806_1.h5\",...
+    "C:\Users\ssk78\Desktop\Brewer LFP\Images\Gamma")
+>>>>>>> Stashed changes
