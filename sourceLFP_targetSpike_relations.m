@@ -1,5 +1,7 @@
 function sourceLFP_targetSpike_relations(t,re_t,logicalValidLFPs,LFPAmplitude,LFPAngles,fi,sourceElec,targetElecs,well_spike_dyn,nYbin,thresh_mult,parent_dir,save_dir)
 
+relationTable=table();
+
 thetaAmpThresh=std(LFPAmplitude)*thresh_mult;
 ampEdges=logspace(log10(thetaAmpThresh),log10(max(LFPAmplitude)),nYbin+1);
 ampCenters=convert_edges_2_centers(log10(ampEdges));
