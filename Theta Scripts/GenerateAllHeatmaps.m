@@ -54,7 +54,9 @@ clc
 %testing range
 testing_idx=[find(ff_axon_tbl.Subregion=="DG-CA3")]';
 
-for nFF=testing_idx%1:height(ff_axon_tbl)
+relationTable=[];
+
+for nFF=1:height(ff_axon_tbl)
     data=load(fullfile(parent_axons_dir,axons_folders(ff_axon_tbl.fi(nFF)),ff_axon_tbl.Electrode(nFF)+".mat"));
     % re_fs=data.re_fs;
     re_fs=1000;
@@ -87,9 +89,22 @@ for nFF=testing_idx%1:height(ff_axon_tbl)
 
     % Regression tests
     targetElecs=well_spike_dyn.channel_name(well_spike_dyn.fi==ff_axon_tbl.fi(nFF) & well_spike_dyn.regi==ff_axon_tbl.subi(nFF));
-    sourceLFP_targetSpike_relations(t,re_t,logicalValidLFPs,LFPAmplitude,LFPAngles,ff_axon_tbl.fi(nFF),ff_axon_tbl.Electrode(nFF),targetElecs,well_spike_dyn,20,thresh_mult,...
+    myTable=sourceLFP_targetSpike_relations(t,re_t,data,logicalValidLFPs,LFPEndPts,LFPAmplitude,LFPAngles,ff_axon_tbl.fi(nFF),ff_axon_tbl.Electrode(nFF),targetElecs,well_spike_dyn,20,thresh_mult,...
         fullfile(parent_wells_dir,wells_folders(ff_axon_tbl.fi(nFF))+"\"),...
-        "C:\Users\lasss\Documents\Research\Brewer Lab work\Code\Lassers_Spike_LFP\Images\Theta")
+        "C:\Users\lasss\Documents\Research\Brewer Lab work\Code\Lassers_Spike_LFP\Images\Theta");
+
+    if isempty(relationTable)
+        relationTable=myTable;
+    else
+        relationTable=[relationTable;myTable];
+    end
 
     disp(nFF+" of "+height(ff_axon_tbl))
+
+    close all force
 end
+
+%% Good Relationships
+
+goodRelationsTbl=relationTable((relationTable.ampPval<0.05 | relationTable.anglePval<0.05)...
+    & relationTable.nAmpSpikesMax>20 & relationTable.nAngleSpikesMax>20 & relationTable.nHeatmapMax>10,:);
