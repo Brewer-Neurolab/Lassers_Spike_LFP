@@ -1,12 +1,12 @@
-%% Axon to Well Amplitude and Spike Relation Test for Theta
+%% Axon to Well Amplitude and Spike Relation Test for delta
 %% Setup
 clear
 clc
 close all
 
-saveDir="C:\Users\lasss\Documents\Research\Brewer Lab work\Code\Lassers_Spike_LFP\Theta Scripts";
+saveDir="C:\Users\lasss\Documents\Research\Brewer Lab work\Code\Lassers_Spike_LFP\Delta Scripts";
 
-parent_axons_dir="D:\Brewer lab data\Slow Oscillation 4 Chamber 5 Tunnel Arrays\4x 210715 210806\1\downsampled tunnels\theta";
+parent_axons_dir="D:\Brewer lab data\Slow Oscillation 4 Chamber 5 Tunnel Arrays\4x 210715 210806\1\downsampled tunnels\delta";
 axons_dir=dir(parent_axons_dir);
 axons_folders=string({axons_dir.name});
 axons_folders=axons_folders([axons_dir.isdir]);
@@ -75,7 +75,7 @@ for nFF=1:height(ff_axon_tbl)
     nsamples_combine_thresh=(1/10)*re_fs*3;
     % nsamples_combine_thresh=[];
 
-    %define min lfp length as 2x shortest theta cycle
+    %define min lfp length as 2x shortest delta cycle
     minLFPCycles=2; %default 2
     minLFPLength=(1/10)*minLFPCycles*re_fs;
 
@@ -93,9 +93,9 @@ for nFF=1:height(ff_axon_tbl)
     targetElecs=well_spike_dyn.channel_name(well_spike_dyn.fi==ff_axon_tbl.fi(nFF) & well_spike_dyn.regi==ff_axon_tbl.subi(nFF));
     targetReg=subregions(well_spike_dyn.regi(well_spike_dyn.fi==ff_axon_tbl.fi(nFF) & well_spike_dyn.regi==ff_axon_tbl.subi(nFF)));
     sourceReg=ff_axon_tbl.Subregion(nFF);
-    myTable=sourceLFP_targetSpike_relations(t,re_t,data,logicalValidLFPs,LFPEndPts,LFPAmplitude,LFPAngles,ff_axon_tbl.fi(nFF),sourceReg,ff_axon_tbl.Electrode(nFF),targetReg,targetElecs,well_spike_dyn,20,thresh_mult,...
+    myTable=sourceLFP_targetSpike_relations(t,re_t,data,logicalValidLFPs,LFPEndPts,LFPAmplitude,LFPAngles,ff_axon_tbl.fi(nFF),ff_axon_tbl.Electrode(nFF),sourceReg,targetElecs,targetReg,well_spike_dyn,20,thresh_mult,...
         fullfile(parent_wells_dir,wells_folders(ff_axon_tbl.fi(nFF))+"\"),...
-        "C:\Users\lasss\Documents\Research\Brewer Lab work\Code\Lassers_Spike_LFP\Images\Theta");
+        "C:\Users\lasss\Documents\Research\Brewer Lab work\Code\Lassers_Spike_LFP\Images\Delta");
 
     if isempty(relationTable)
         relationTable=myTable;

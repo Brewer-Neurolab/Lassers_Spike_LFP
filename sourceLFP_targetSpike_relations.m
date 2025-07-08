@@ -1,4 +1,4 @@
-function relationTable=sourceLFP_targetSpike_relations(t,re_t,myData,logicalValidLFPs,LFPEndPts,LFPAmplitude,LFPAngles,fi,sourceElec,targetElecs,well_spike_dyn,nYbin,thresh_mult,parent_dir,save_dir)
+function relationTable=sourceLFP_targetSpike_relations(t,re_t,myData,logicalValidLFPs,LFPEndPts,LFPAmplitude,LFPAngles,fi,sourceElec,sourceReg,targetElecs,targetReg,well_spike_dyn,nYbin,thresh_mult,parent_dir,save_dir)
 
 relationTable=table();
 row=1;
@@ -93,15 +93,15 @@ for nElec=1:length(targetElecs)
     ampProbs=histcounts(wellBurstAmp,ampEdges,"Normalization","probability");
     ampCounts=histcounts(wellBurstAmp,ampEdges);
     ampMI=modulationIndex(ampProbs);
-    % ampPval=shuffleLFP_ModIdx(ampMI,LFPAmplitude,find(logicalValidLFPs),logicalValidSpikes,ampEdges,nIter);
-    ampPval=fftShuffleLFP_ModIdx(ampMI,myData,LFPEndPts,logicalValidSpikes,ampEdges,nIter,"amp");
+    ampPval=shuffleLFP_ModIdx(ampMI,LFPAmplitude,find(logicalValidLFPs),logicalValidSpikes,ampEdges,nIter);
+    % ampPval=circShuffleLFP_ModIdx(ampMI,LFPAmplitude,LFPEndPts,logicalValidSpikes,ampEdges,nIter);
     set(gca,"XScale","log")
     % set(gca,"FontSize",24)
     % axis square
     pbaspect([2,1,1])
     xlim([min(ampEdges),max(ampEdges)])
     xticks(ampEdges(1:4:end))
-    xticklabels(round(ampEdges(1:4:end)))
+    xticklabels(round(ampEdges(1:4:end),2,"significant"))
     set(gca,'XMinorTick','off')
     ax=gca;
     ax.LineWidth=4;
@@ -127,7 +127,7 @@ for nElec=1:length(targetElecs)
     angleProbs=histcounts(wellBurstAngles,angleEdges,"Normalization","probability");
     angleCounts=histcounts(wellBurstAngles,angleEdges);
     angleMI=modulationIndex(angleProbs);
-    anglePval=fftShuffleLFP_ModIdx(angleMI,myData,find(logicalValidLFPs),logicalValidSpikes,angleEdges,nIter,"angle");
+    anglePval=fftShuffleLFP_ModIdx(angleMI,myData,LFPEndPts,logicalValidSpikes,angleEdges,nIter,"angle");
     % axis square
     pbaspect([2,1,1])
     xlim([-180,180])
@@ -137,7 +137,7 @@ for nElec=1:length(targetElecs)
     if anglePval<1/nIter
         subtitle("mod idx="+round(angleMI,2)+" p<"+1/nIter)
     else
-        subtitle("mod idx="+round(angleMI,2)+" p="+ampPval)
+        subtitle("mod idx="+round(angleMI,2)+" p="+anglePval)
     end
     ylabel("Spikes")
     xlabel("Angle")
@@ -174,7 +174,9 @@ for nElec=1:length(targetElecs)
 
         relationTable.fi(row)=fi;
         relationTable.sourceElec(row)=sourceElec;
+        relationTable.sourceReg(row)=sourceReg;
         relationTable.targetElec(row)=targetElecs(nElec);
+        relationTable.targetReg(row)=targetReg(nElec);
         relationTable.ampMI(row)=ampMI;
         relationTable.angleMI(row)=angleMI;
         relationTable.ampPval(row)=ampPval;
@@ -189,7 +191,9 @@ for nElec=1:length(targetElecs)
 
     relationTable.fi(row)=fi;
     relationTable.sourceElec(row)=sourceElec;
+    relationTable.sourceReg(row)=sourceReg;
     relationTable.targetElec(row)=targetElecs(nElec);
+    relationTable.targetReg(row)=targetReg(nElec);
     relationTable.ampMI(row)=ampMI;
     relationTable.angleMI(row)=angleMI;
     relationTable.ampPval(row)=ampPval;
