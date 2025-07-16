@@ -93,7 +93,7 @@ for nFF=1:height(ff_axon_tbl)
     targetElecs=well_spike_dyn.channel_name(well_spike_dyn.fi==ff_axon_tbl.fi(nFF) & well_spike_dyn.regi==ff_axon_tbl.subi(nFF));
     targetReg=subregions(well_spike_dyn.regi(well_spike_dyn.fi==ff_axon_tbl.fi(nFF) & well_spike_dyn.regi==ff_axon_tbl.subi(nFF)));
     sourceReg=ff_axon_tbl.Subregion(nFF);
-    myTable=sourceLFP_targetSpike_relations(t,re_t,data,logicalValidLFPs,LFPEndPts,LFPAmplitude,LFPAngles,ff_axon_tbl.fi(nFF),sourceReg,ff_axon_tbl.Electrode(nFF),targetReg,targetElecs,well_spike_dyn,20,thresh_mult,...
+    myTable=sourceLFP_targetSpike_relations(t,re_t,data,logicalValidLFPs,LFPEndPts,LFPAmplitude,LFPAngles,ff_axon_tbl.fi(nFF),ff_axon_tbl.Electrode(nFF),sourceReg,targetElecs,targetReg,well_spike_dyn,20,thresh_mult,...
         fullfile(parent_wells_dir,wells_folders(ff_axon_tbl.fi(nFF))+"\"),...
         "C:\Users\lasss\Documents\Research\Brewer Lab work\Code\Lassers_Spike_LFP\Images\Theta");
 
@@ -108,7 +108,7 @@ for nFF=1:height(ff_axon_tbl)
     close all force
 end
 
-save(saveDir,"relationTable")
+save(fullfile(saveDir,"relationTable"),"relationTable")
 %% Good Relationships
 
 %calculate false discovery rates for amp and angle
@@ -123,4 +123,6 @@ goodRelationsTbl=relationTable((relationTable.ampPval<0.05 | relationTable.angle
 goodRelationsTblFDR=relationTable((relationTable.ampFDRh & relationTable.angleFDRh)...
     & relationTable.nAmpSpikesMax>20 & relationTable.nAngleSpikesMax>20 & relationTable.nHeatmapMax>10,:);
 
-save(saveDir,"goodRelationsTbl")
+save(fullfile(saveDir,"goodRelationsTbl"),"goodRelationsTbl")
+save(fullfile(saveDir,"goodRelationsTblFDR"),"goodRelationsTblFDR")
+

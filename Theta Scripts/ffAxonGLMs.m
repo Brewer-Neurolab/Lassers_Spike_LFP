@@ -58,7 +58,7 @@ wellElecs=wellElecs.matching_table;
 glmTblAll=table();
 row=1;
 
-for nFF=[95,96,117]%1:%height(ff_axon_tbl)%[95,96,117]
+for nFF=1:height(ff_axon_tbl)%[95,96,117]
     % Axon Setup
     data=load(fullfile(parent_axons_dir,axons_folders(ff_axon_tbl.fi(nFF)),ff_axon_tbl.Electrode(nFF)+".mat"));
     data=data.data;
@@ -132,12 +132,12 @@ for nFF=[95,96,117]%1:%height(ff_axon_tbl)%[95,96,117]
     DeltaAngle=angle(DeltaHilbert);
     DeltaAngle(~logicalValidLFPs)=[];
 
-    targetElecs=well_spike_dyn.channel_name(well_spike_dyn.fi==ff_axon_tbl.fi(nFF) & well_spike_dyn.regi==ff_axon_tbl.subi(nFF));
-    sourceLFP_targetSpike_relations(t,re_t,logicalValidLFPs,LFPAmplitude,LFPAngles,ff_axon_tbl.fi(nFF),ff_axon_tbl.Electrode(nFF),targetElecs,well_spike_dyn,20,thresh_mult,...
-        "D:\Brewer lab data\Slow Oscillation 4 Chamber 5 Tunnel Arrays\4x 210715 210806\1\Well Spikes\4x 33152 210715 21div 210806_1.h5\",...
-        "C:\Users\lasss\Documents\Research\Brewer Lab work\Code\Lassers_Spike_LFP\Images\Theta")
-
-    close all
+    % targetElecs=well_spike_dyn.channel_name(well_spike_dyn.fi==ff_axon_tbl.fi(nFF) & well_spike_dyn.regi==ff_axon_tbl.subi(nFF));
+    % sourceLFP_targetSpike_relations(t,re_t,logicalValidLFPs,LFPAmplitude,LFPAngles,ff_axon_tbl.fi(nFF),ff_axon_tbl.Electrode(nFF),targetElecs,well_spike_dyn,20,thresh_mult,...
+    %     "D:\Brewer lab data\Slow Oscillation 4 Chamber 5 Tunnel Arrays\4x 210715 210806\1\Well Spikes\4x 33152 210715 21div 210806_1.h5\",...
+    %     "C:\Users\lasss\Documents\Research\Brewer Lab work\Code\Lassers_Spike_LFP\Images\Theta")
+    % 
+    % close all
 
     myWellElecs=wellElecs.electrode(wellElecs.subregion==ff_axon_tbl.FFReg(nFF));
     
@@ -188,7 +188,9 @@ for nFF=[95,96,117]%1:%height(ff_axon_tbl)%[95,96,117]
         glmTblAll.target_reg(row)=ff_axon_tbl.FFReg(nFF);
         glmTblAll.target_elec(row)=myWellElecs(nWell);
         glmTblAll.mdl{row}=mdl_del;
-        glmTblAll.mdlPVal(row)=mdl_del.devianceTest.pValue(2);
+        % glmTblAll.mdlPVal(row)=mdl_del.devianceTest.pValue(2);
+        glmTblAll.mdlPVal(row)=coefTest(mdl_del);
+
 
         row=row+1;
 
