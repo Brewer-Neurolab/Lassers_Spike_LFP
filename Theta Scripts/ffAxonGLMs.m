@@ -459,3 +459,21 @@ nsig=sum(amp>-log10(0.0009) & interaction>-log10(0.0009));
 
 title("#Significant Connections: "+nsig)
 set(gca,"FontSize",20)
+
+%% Amp V Mdl by subregion
+
+for subi=1:length(interRegions)
+    glmScatter(glmTblAll,"mdl",2,interRegions(subi),0.05)
+end
+
+%% Cos Angle V Amp by subregion
+
+for subi=1:length(interRegions)
+    glmScatter(glmTblAll,2,5,interRegions(subi),0.05)
+end
+
+%% Amp:CosAngle V Mld by subregion
+
+for subi=1:length(interRegions)
+    glmScatter(glmTblAll,"mdl",8,interRegions(subi),0.05)
+end
