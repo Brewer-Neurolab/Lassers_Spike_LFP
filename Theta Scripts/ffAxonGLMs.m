@@ -199,7 +199,16 @@ for nFF=1:height(ff_axon_tbl)%[95,96,117]
 
 end
 
-%% plot log10(p)
+%% Create low memory glm table
+
+for nConnect=1:height(glmTblAll)
+    lowInfoGLM=struct(glmTblAll.mdl{nConnect});
+    myFields=fieldnames(lowInfoGLM);
+    toRemove=myFields(ismember(myFields,["Design","design_r","y_r","w_r","ObservationInfo","Data","Variables","Offset","IRLSWeights","Residuals","Leverage"]));
+    glmTblAll.mdl{nConnect}=rmfield(lowInfoGLM,toRemove);
+end
+
+%% plot log10(p) for cos v amp
 % unique_sources=unique(glmTblAll(:,[1,2,3]));
 
 % for nAxons=1:height(unique_sources)
@@ -244,4 +253,209 @@ legend([unique_sources,'',''],'Location','southeast')
 % ax.tick
 % end
 % hold off
+nsig=sum(amp>-log10(0.0009) & interaction>-log10(0.0009));
 
+title("#Significant Connections: "+nsig)
+set(gca,"FontSize",20)
+%% plot log10(p) for amp v pval
+% unique_sources=unique(glmTblAll(:,[1,2,3]));
+
+% for nAxons=1:height(unique_sources)
+amp=[];
+interaction=[];
+colorVar=string();
+for nConnect=1:height(glmTblAll)%find(table2array(glmTblAll(:,[1,2,3]))==table2array(unique_sources(nAxons,:)))
+    amp(nConnect)=-log10(glmTblAll.mdlPVal(nConnect));
+    interaction(nConnect)=-log10(glmTblAll.mdl{nConnect}.Coefficients.pValue(2));
+    colorVar(nConnect)=string(glmTblAll.fi(nConnect))+glmTblAll.source_elec(nConnect);
+end
+
+unique_sources=unique(colorVar);
+unique_colors=distinguishable_colors(numel(unique_sources));
+cVec=[];
+for nCol=1:numel(unique_sources)
+    cVec(find(colorVar==unique_sources(nCol)),:)=repmat(unique_colors(nCol,:),[numel(find(colorVar==unique_sources(nCol))),1]);
+end
+
+figure
+hold on
+for nAxons=1:length(unique_sources)
+    % scatter(amp(colorVar==unique_sources(nAxons)),interaction(colorVar==unique_sources(nAxons)),20,cVec(colorVar==unique_sources(nAxons)),'filled')
+    scatter(amp(colorVar==unique_sources(nAxons)),interaction(colorVar==unique_sources(nAxons)),40)
+end
+hold off
+
+xlabel("-log10 p mdl")
+ylabel("-log10 p Amp")
+
+ax=gca;
+ax.XScale="log";
+ax.YScale="log";
+
+ylim([0.001,50])
+xlim([0.001,500])
+
+xline(-log10(0.0009))
+yline(-log10(0.0009))
+
+legend([unique_sources,'',''],'Location','southeast')
+% ax.tick
+% end
+% hold off
+nsig=sum(amp>-log10(0.0009) & interaction>-log10(0.0009));
+
+title("#Significant Connections: "+nsig)
+set(gca,"FontSize",20)
+%% plot log10(p) for amp:cos v pval EC-DG
+% unique_sources=unique(glmTblAll(:,[1,2,3]));
+
+% for nAxons=1:height(unique_sources)
+amp=[];
+interaction=[];
+colorVar=string();
+glmTblECDG=glmTblAll(glmTblAll.source_reg=="EC-DG",:);
+for nConnect=1:height(glmTblECDG)%find(table2array(glmTblAll(:,[1,2,3]))==table2array(unique_sources(nAxons,:)))
+    amp(nConnect)=-log10(glmTblECDG.mdl{nConnect}.Coefficients.pValue(8));
+    interaction(nConnect)=-log10(glmTblECDG.mdl{nConnect}.Coefficients.pValue(2));
+    colorVar(nConnect)=string(glmTblECDG.fi(nConnect))+glmTblECDG.source_elec(nConnect);
+end
+
+unique_sources=unique(colorVar);
+unique_colors=distinguishable_colors(numel(unique_sources));
+cVec=[];
+for nCol=1:numel(unique_sources)
+    cVec(find(colorVar==unique_sources(nCol)),:)=repmat(unique_colors(nCol,:),[numel(find(colorVar==unique_sources(nCol))),1]);
+end
+
+figure
+hold on
+for nAxons=1:length(unique_sources)
+    % scatter(amp(colorVar==unique_sources(nAxons)),interaction(colorVar==unique_sources(nAxons)),20,cVec(colorVar==unique_sources(nAxons)),'filled')
+    thisColor=cVec(colorVar==unique_sources(nAxons),:);
+    scatter(amp(colorVar==unique_sources(nAxons)),interaction(colorVar==unique_sources(nAxons)),40,"MarkerEdgeColor",thisColor(1,:),"LineWidth",1.5)
+end
+hold off
+
+xlabel("-log10 p model")
+ylabel("-log10 p Amp:cos Angle")
+
+ax=gca;
+ax.XScale="log";
+ax.YScale="log";
+
+% ylim([0.001,50])
+% xlim([0.001,500])
+
+BonferroniP=0.05/height(glmTblECDG);
+
+xline(-log10(BonferroniP))
+yline(-log10(BonferroniP))
+
+legend([unique_sources,'',''],'Location','southeast')
+% ax.tick
+% end
+% hold off
+nsig=sum(amp>-log10(BonferroniP) & interaction>-log10(BonferroniP));
+
+title("#Significant Connections: "+nsig+"/"+height(glmTblECDG))
+set(gca,"FontSize",20)
+
+axis square
+%% plot log10(p) for amp:sin v pval
+% unique_sources=unique(glmTblAll(:,[1,2,3]));
+
+% for nAxons=1:height(unique_sources)
+amp=[];
+interaction=[];
+colorVar=string();
+for nConnect=1:height(glmTblAll)%find(table2array(glmTblAll(:,[1,2,3]))==table2array(unique_sources(nAxons,:)))
+    amp(nConnect)=-log10(glmTblAll.mdl{nConnect}.Coefficients.pValue(7));
+    interaction(nConnect)=-log10(glmTblAll.mdl{nConnect}.Coefficients.pValue(2));
+    colorVar(nConnect)=string(glmTblAll.fi(nConnect))+glmTblAll.source_elec(nConnect);
+end
+
+unique_sources=unique(colorVar);
+unique_colors=distinguishable_colors(numel(unique_sources));
+cVec=[];
+for nCol=1:numel(unique_sources)
+    cVec(find(colorVar==unique_sources(nCol)),:)=repmat(unique_colors(nCol,:),[numel(find(colorVar==unique_sources(nCol))),1]);
+end
+
+figure
+hold on
+for nAxons=1:length(unique_sources)
+    % scatter(amp(colorVar==unique_sources(nAxons)),interaction(colorVar==unique_sources(nAxons)),20,cVec(colorVar==unique_sources(nAxons)),'filled')
+    scatter(amp(colorVar==unique_sources(nAxons)),interaction(colorVar==unique_sources(nAxons)),40)
+end
+hold off
+
+xlabel("-log10 p mdl")
+ylabel("-log10 p Amp:cos Angle")
+
+ax=gca;
+ax.XScale="log";
+ax.YScale="log";
+
+ylim([0.001,50])
+xlim([0.001,500])
+
+xline(-log10(0.0009))
+yline(-log10(0.0009))
+
+legend([unique_sources,'',''],'Location','southeast')
+% ax.tick
+% end
+% hold off
+nsig=sum(amp>-log10(0.0009) & interaction>-log10(0.0009));
+
+title("#Significant Connections: "+nsig)
+set(gca,"FontSize",20)
+%% plot log10(p) for amp:angle v pval
+% unique_sources=unique(glmTblAll(:,[1,2,3]));
+
+% for nAxons=1:height(unique_sources)
+amp=[];
+interaction=[];
+colorVar=string();
+for nConnect=1:height(glmTblAll)%find(table2array(glmTblAll(:,[1,2,3]))==table2array(unique_sources(nAxons,:)))
+    amp(nConnect)=-log10(glmTblAll.mdl{nConnect}.Coefficients.pValue(7));
+    interaction(nConnect)=-log10(glmTblAll.mdl{nConnect}.Coefficients.pValue(2));
+    colorVar(nConnect)=string(glmTblAll.fi(nConnect))+glmTblAll.source_elec(nConnect);
+end
+
+unique_sources=unique(colorVar);
+unique_colors=distinguishable_colors(numel(unique_sources));
+cVec=[];
+for nCol=1:numel(unique_sources)
+    cVec(find(colorVar==unique_sources(nCol)),:)=repmat(unique_colors(nCol,:),[numel(find(colorVar==unique_sources(nCol))),1]);
+end
+
+figure
+hold on
+for nAxons=1:length(unique_sources)
+    % scatter(amp(colorVar==unique_sources(nAxons)),interaction(colorVar==unique_sources(nAxons)),20,cVec(colorVar==unique_sources(nAxons)),'filled')
+    scatter(amp(colorVar==unique_sources(nAxons)),interaction(colorVar==unique_sources(nAxons)),40)
+end
+hold off
+
+xlabel("-log10 p mdl")
+ylabel("-log10 p Amp:cos Angle")
+
+ax=gca;
+ax.XScale="log";
+ax.YScale="log";
+
+ylim([0.001,50])
+xlim([0.001,500])
+
+xline(-log10(0.0009))
+yline(-log10(0.0009))
+
+legend([unique_sources,'',''],'Location','southeast')
+% ax.tick
+% end
+% hold off
+nsig=sum(amp>-log10(0.0009) & interaction>-log10(0.0009));
+
+title("#Significant Connections: "+nsig)
+set(gca,"FontSize",20)
