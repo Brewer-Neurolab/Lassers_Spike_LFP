@@ -26,7 +26,7 @@ ff_axon_tbl=table();
 row=1;
 for fi=1:length(axon_spikes)
     for nelec=1:height(axon_spikes{fi})
-        if ~isempty(axon_spikes{fi}.up_ff)
+        if ~isempty(axon_spikes{fi}.up_ff{nelec})
             ff_axon_tbl.fi(row)=fi;
             ff_axon_tbl.Subregion(row)=axon_spikes{fi}.Subregion(nelec);
             ff_axon_tbl.interRegi(row)=find(interRegions==axon_spikes{fi}.Subregion(nelec));
@@ -464,6 +464,12 @@ set(gca,"FontSize",20)
 
 for subi=1:length(interRegions)
     glmScatter(glmTblAll,"mdl",2,interRegions(subi),0.05)
+end
+
+%% CosAngle V Mdl by subregion
+
+for subi=1:length(interRegions)
+    glmScatter(glmTblAll,"mdl",5,interRegions(subi),0.05)
 end
 
 %% Cos Angle V Amp by subregion
