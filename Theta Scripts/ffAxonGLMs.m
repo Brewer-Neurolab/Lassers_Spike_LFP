@@ -114,17 +114,39 @@ for nFF=1:height(ff_axon_tbl)%[95,96,117]
 
     validLFPIndex=[];
     for nEndPts=1:size(LFPEndPts,1)
-        validLFPIndex=[validLFPIndex,LFPEndPts(nEndPts,1)-250:LFPEndPts(nEndPts,2)+250];
+        validLFPIndex=[validLFPIndex,LFPEndPts(nEndPts,1):LFPEndPts(nEndPts,2)];
     end
+    validLFPIndex=unique(validLFPIndex);
+    validLFPIndex(validLFPIndex<=0 | validLFPIndex>length(re_t))=[];
     logicalValidLFPs=zeros(1,length(re_t));
-    logicalValidLFPs(validLFPIndex(validLFPIndex>0 & validLFPIndex<length(t)))=1;
+    logicalValidLFPs(validLFPIndex(validLFPIndex>0 & validLFPIndex<length(re_t)))=1;
     logicalValidLFPs=logical(logicalValidLFPs);
 
     ThetaHilbert=hilbert(theta);
     ThetaAmp=abs(ThetaHilbert);
     ThetaAmp(~logicalValidLFPs)=[];
     ThetaAngle=angle(ThetaHilbert);
+    ThetaAngleWhole=ThetaAngle;
     ThetaAngle(~logicalValidLFPs)=[];
+
+    % Count theta cycles
+    % thetaCycleCounter=[];
+    % for nEndPts=1:size(LFPEndPts,1)
+    %     pkRange=LFPEndPts(nEndPts,1):LFPEndPts(nEndPts,2);
+    %     pkRange(pkRange<=0 | pkRange>length(re_t))=[];
+    %     [~,pkLocs]=findpeaks(ThetaAngleWhole(pkRange),"MinPeakHeight",3);
+    %     thisCycle=[];
+    %     for nPks=1:length(pkLocs)+1
+    %         if nPks==1
+    %             thisCycle=[repmat(nPks,pkLocs(nPks),1)];
+    %         elseif nPks==length(pkLocs)+1
+    %             thisCycle=[thisCycle;repmat(nPks,LFPEndPts(nEndPts,2)-LFPEndPts(nEndPts,1)-pkLocs(nPks-1),1)];
+    %         else
+    %             thisCycle=[thisCycle;repmat(nPks,pkLocs(nPks)-pkLocs(nPks-1),1)];
+    %         end
+    %     end
+    %     thetaCycleCounter=[thetaCycleCounter;thisCycle];
+    % end
 
     DeltaHilbert=hilbert(delta);
     DeltaAmp=abs(DeltaHilbert);
