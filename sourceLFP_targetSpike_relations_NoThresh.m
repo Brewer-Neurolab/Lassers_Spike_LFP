@@ -1,10 +1,10 @@
-function relationTable=sourceLFP_targetSpike_relations(t,re_t,myData,logicalValidLFPs,LFPEndPts,LFPAmplitude,LFPAngles,fi,sourceElec,sourceReg,targetElecs,targetReg,well_spike_dyn,nYbin,thresh_mult,parent_dir,save_dir)
+function relationTable=sourceLFP_targetSpike_relations_NoThresh(t,re_t,myData,logicalValidLFPs,LFPEndPts,LFPAmplitude,LFPAngles,fi,sourceElec,sourceReg,targetElecs,targetReg,well_spike_dyn,nYbin,thresh_mult,parent_dir,save_dir)
 
 logicalValidLFPs=logical(logicalValidLFPs);
 relationTable=table();
 row=1;
 
-thetaAmpThresh=std(LFPAmplitude)*thresh_mult+mean(LFPAmplitude);
+thetaAmpThresh=5;
 ampEdges=logspace(log10(thetaAmpThresh),log10(max(LFPAmplitude)),nYbin+1);
 % ampEdges=logspace(log10(min(LFPAmplitude(logicalValidLFPs))),log10(max(LFPAmplitude)),nYbin+1);
 ampCenters=convert_edges_2_centers(log10(ampEdges));
@@ -87,41 +87,91 @@ for nElec=1:length(targetElecs)
 
     %% Amplitude MI
     fAmp=figure('Name',targetElecs(nElec)+" amp",'NumberTitle','off','WindowState','fullscreen');
+    fAmp_axis=axes('Parent',fAmp);
     % tf=tiledlayout(3,2,"Padding","tight","TileSpacing","tight");
     % well spikes vs amplitude
     % nexttile
-    hamp=histogram(wellBurstAmp,ampEdges);
+    histogram(wellBurstAmp,ampEdges)
     ampProbs=histcounts(wellBurstAmp,ampEdges,"Normalization","probability");
     ampCounts=histcounts(wellBurstAmp,ampEdges);
     ampMI=modulationIndex(ampProbs);
-
+    
     %shuffling tests for pval
-    ampPval=shuffleLFP_ModIdx(ampMI,LFPAmplitude,find(logicalValidLFPs),logicalValidSpikes,ampEdges,nIter);
+    % ampPval=shuffleLFP_ModIdx(ampMI,LFPAmplitude,find(logicalValidLFPs),logicalValidSpikes,ampEdges,nIter);
     % ampPval=circShuffleLFP_ModIdx(ampMI,LFPAmplitude,LFPEndPts,logicalValidSpikes,ampEdges,nIter);
     % ampPval=jitterLFP_ModIdx(ampMI,LFPAmplitude,find(logicalValidLFPs),logicalValidSpikes,ampEdges,nIter,100,1000);
-    
+
     %slope fit test for pval
     % mdl=fitlm(log10(ampCenters),hamp.Values);
     % ampPval=mdl.Coefficients.pValue(2);
-    
-    set(gca,"XScale","log")
+    % [coeff,stats,optlim,~,~]=find_semipowerlawfit_with_grid_search(ampCenters,ampCounts,[min(ampCenters),max(ampCenters)]);
+    % ampPval=stats.pValue(2);
+    % rsq=stats.Rsquared;
+    % if ~isempty(optlim)
+    %     x=linspace(optlim(1),optlim(2),20);
+    %     y=coeff(2).*log10(x)+coeff(1);
+    %     hold(fAmp_axis,"on")
+    %     plot(fAmp_axis,x,y,'r--')
+    %     hold(fAmp_axis,"off")
+    % end
+    %
+    % if isempty(coeff)
+    %     coeff=[NaN,NaN];
+    % end
+    if max(ampCounts)>20
+        [coeff,stats,optlim,~,~]=find_powerlawfit_with_grid_search(ampCenters,ampCounts,[min(ampCenters),max(ampCenters)]);
+        ampPval=stats.pValue(2);
+        rsq=stats.Rsquared;
+        if ~isempty(optlim)
+            x=linspace(optlim(1),optlim(2),20);
+            y=10.^(coeff(2).*log10(x)+coeff(1));
+            hold(fAmp_axis,"on")
+            plot(fAmp_axis,x,y,'r--','LineWidth',4)
+            hold(fAmp_axis,"off")
+            xlim([min(ampEdges),max(ampEdges)])
+            % xticks(ampEdges(1:4:end))
+            % xticks(logspace(0,5,12))
+            % xticklabels(round(ampEdges(1:4:end),2,"significant"))
+            % xticklabels(logspace(0,5,12))
+            xticks([5,10,20,50,100,200,500,1000,5000])
+            xticklabels([5,10,20,50,100,200,500,1000,5000])
+            set(fAmp_axis,'XMinorTick','on')
+
+            yticks([2,5,10,20,50,100,200,500,1000,5000])
+            yticklabels([2,5,10,20,50,100,200,500,1000,5000])
+            set(fAmp_axis,'YMinorTick','on')
+            % yticks(logspace(0,max(ampCounts),12))
+            % yticklabels(round(logspace(0,max(ampCounts),12),2,"significant"))
+        end
+
+        if isempty(coeff)
+            coeff=[NaN,NaN];
+        end
+    else
+        coeff=[NaN,NaN];
+        rsq=NaN;
+        ampPval=NaN;
+    end
+    set(fAmp_axis,"XScale","log")
+    set(fAmp_axis,"YScale","log")
     % set(gca,"FontSize",24)
     % axis square
     pbaspect([2,1,1])
-    xlim([min(ampEdges),max(ampEdges)])
-    xticks(ampEdges(1:4:end))
-    xticklabels(round(ampEdges(1:4:end),2,"significant"))
-    set(gca,'XMinorTick','off')
-    ax=gca;
+    
+
+    ax=fAmp_axis;
     ax.LineWidth=4;
     ax.TickLength=[0.01 0.05];
 
     title("Well Spikes VS Amplitude")
-    if ampPval<1/nIter
-        subtitle("mod idx="+round(ampMI,2)+" p<"+1/nIter)
-    else
-        subtitle("mod idx="+round(ampMI,2,"significant")+" p="+round(ampPval,2,"significant"))
-    end
+    % if ampPval<1/nIter
+    %     subtitle("R^2="+round(rsq,2)+" p<"+1/nIter)
+    % else
+    %     subtitle("R^2="+round(rsq,2,"significant")+" Slope "+coeff(2)+" p="+ampPval)
+    % end
+
+    subtitle("R^2="+round(rsq,2,"significant")+" Slope "+round(coeff(2),2,'significant')+" p="+round(ampPval,2,"significant"))
+
     ylabel("Spikes")
     xlabel("Amplitude uV")
     set(gca,"FontSize",50)
@@ -193,6 +243,8 @@ for nElec=1:length(targetElecs)
         relationTable.ampMI(row)=ampMI;
         relationTable.angleMI(row)=angleMI;
         relationTable.ampPval(row)=ampPval;
+        relationTable.rsq(row)=rsq;
+        relationTable.slope(row)=coeff(2);
         relationTable.anglePval(row)=anglePval;
         relationTable.nAmpSpikesMax(row)=max(ampCounts);
         relationTable.nAngleSpikesMax(row)=max(angleCounts);
@@ -210,6 +262,8 @@ for nElec=1:length(targetElecs)
     relationTable.ampMI(row)=ampMI;
     relationTable.angleMI(row)=angleMI;
     relationTable.ampPval(row)=ampPval;
+    relationTable.rsq(row)=rsq;
+    relationTable.slope(row)=coeff(2);
     relationTable.anglePval(row)=anglePval;
     relationTable.nAmpSpikesMax(row)=max(ampCounts);
     relationTable.nAngleSpikesMax(row)=max(angleCounts);

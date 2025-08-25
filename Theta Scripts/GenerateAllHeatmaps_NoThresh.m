@@ -61,7 +61,7 @@ well_spike_dyn=well_spike_dyn.well_spike_dynamics_table;
 clc
 
 %testing range
-testing_idx=[find(ff_axon_tbl.Subregion=="DG-CA3")]';
+testing_idx=[find(ff_axon_tbl.Subregion=="CA3-CA1")]';
 
 relationTable=[];
 
@@ -94,16 +94,16 @@ for nFF=1:height(ff_axon_tbl)
         validLFPIndex=[validLFPIndex,LFPEndPts(nEndPts,1):LFPEndPts(nEndPts,2)];
     end
     logicalValidLFPs=zeros(1,length(re_t)); % uncomment for lower bound LFP
-    % logicalValidLFPs=ones(1,length(re_t)); % considers all LFPs
-    logicalValidLFPs(validLFPIndex)=1;
+    logicalValidLFPs=ones(1,length(re_t)); % considers all LFPs
+    % logicalValidLFPs(validLFPIndex)=1;
 
     % Regression tests
     targetElecs=well_spike_dyn.channel_name(well_spike_dyn.fi==ff_axon_tbl.fi(nFF) & well_spike_dyn.regi==ff_axon_tbl.subi(nFF));
     targetReg=subregions(well_spike_dyn.regi(well_spike_dyn.fi==ff_axon_tbl.fi(nFF) & well_spike_dyn.regi==ff_axon_tbl.subi(nFF)));
     sourceReg=ff_axon_tbl.Subregion(nFF);
-    myTable=sourceLFP_targetSpike_relations(t,re_t,data,logicalValidLFPs,LFPEndPts,LFPAmplitude,LFPAngles,ff_axon_tbl.fi(nFF),ff_axon_tbl.Electrode(nFF),sourceReg,targetElecs,targetReg,well_spike_dyn,20,thresh_mult,...
+    myTable=sourceLFP_targetSpike_relations_NoThresh(t,re_t,data,logicalValidLFPs,LFPEndPts,LFPAmplitude,LFPAngles,ff_axon_tbl.fi(nFF),ff_axon_tbl.Electrode(nFF),sourceReg,targetElecs,targetReg,well_spike_dyn,20,thresh_mult,...
         fullfile(parent_wells_dir,wells_folders(ff_axon_tbl.fi(nFF))+"\"),...
-        "C:\Users\lasss\Documents\Research\Brewer Lab work\Code\Lassers_Spike_LFP\Images\Theta\Spikes");
+        "C:\Users\lasss\Documents\Research\Brewer Lab work\Code\Lassers_Spike_LFP\Images\Theta\Spikes No Thresh Test LogLog");
 
     if isempty(relationTable)
         relationTable=myTable;
@@ -116,7 +116,7 @@ for nFF=1:height(ff_axon_tbl)
     close all force
 end
 
-save(fullfile(saveDir,"relationTable"),"relationTable")
+save(fullfile(saveDir,"relationTable_NoThresh"),"relationTable")
 %% Good Relationships
 
 %calculate false discovery rates for amp and angle
@@ -131,6 +131,6 @@ goodRelationsTbl=relationTable((relationTable.ampPval<0.05 | relationTable.angle
 goodRelationsTblFDR=relationTable((relationTable.ampFDRh & relationTable.angleFDRh)...
     & relationTable.nAmpSpikesMax>20 & relationTable.nAngleSpikesMax>20 & relationTable.nHeatmapMax>10,:);
 
-save(fullfile(saveDir,"goodRelationsTbl"),"goodRelationsTbl")
-save(fullfile(saveDir,"goodRelationsTblFDR"),"goodRelationsTblFDR")
+save(fullfile(saveDir,"goodRelationsTbl_NoThresh"),"goodRelationsTbl")
+save(fullfile(saveDir,"goodRelationsTblFDR_NoThresh"),"goodRelationsTblFDR")
 

@@ -1,4 +1,4 @@
-%% GLM for Feedforward Axons
+%% GLM for Feedforward Axons For Bursting
 
 %% Setup
 clear
@@ -119,7 +119,8 @@ for nFF=1:height(ff_axon_tbl)%[95,96,117]
     end
     validLFPIndex=unique(validLFPIndex);
     validLFPIndex(validLFPIndex<=0 | validLFPIndex>length(re_t))=[];
-    logicalValidLFPs=zeros(1,length(re_t));
+    % logicalValidLFPs=zeros(1,length(re_t)); % Uncomment to only examine high amplitudes within Axon LFP
+    logicalValidLFPs=ones(1,length(re_t));
     logicalValidLFPs(validLFPIndex(validLFPIndex>0 & validLFPIndex<length(re_t)))=1;
     logicalValidLFPs=logical(logicalValidLFPs);
 
@@ -162,22 +163,35 @@ for nFF=1:height(ff_axon_tbl)%[95,96,117]
     % 
     % close all
 
-    myWellElecs=wellElecs.electrode(wellElecs.subregion==ff_axon_tbl.FFReg(nFF));
+    % myWellElecs=wellElecs.electrode(wellElecs.subregion==ff_axon_tbl.FFReg(nFF));
+    myWellElecs=well_spike_dyn.channel_name(well_spike_dyn.regi==ff_axon_tbl.subi(nFF) & well_spike_dyn.fi==ff_axon_tbl.fi(nFF));
     
     for nWell=1:length(myWellElecs)
-        angle_edges=[-pi:pi/180*18:pi];
-        % spikes=load("D:\Brewer lab data\Slow Oscillation 4 Chamber 5 Tunnel Arrays\4x 210715 210806\1\Well Spikes\4x 33152 210715 21div 210806_1.h5\A8_spikes.mat");
-        spikes=load(fullfile(parent_wells_dir,wells_folders(ff_axon_tbl.fi(nFF)),myWellElecs(nWell)+"_spikes.mat"));
-        spikes=spikes.index/1000;
-        spike_train=zeros(1,length(t));
-        spike_train(ismembertol(t,spikes))=1;
-        glmTbl=table();
-        spike_idx=round(remap(find(spike_train),1,length(t),1,300*re_fs));
-        spike_train=zeros(1,300*re_fs);
-        spike_train(spike_idx)=1;
-        spike_train(~logicalValidLFPs)=[];
+        % angle_edges=[-pi:pi/180*18:pi];
+        % % spikes=load("D:\Brewer lab data\Slow Oscillation 4 Chamber 5 Tunnel Arrays\4x 210715 210806\1\Well Spikes\4x 33152 210715 21div 210806_1.h5\A8_spikes.mat");
+        % spikes=load(fullfile(parent_wells_dir,wells_folders(ff_axon_tbl.fi(nFF)),myWellElecs(nWell)+"_spikes.mat"));
+        % spikes=spikes.index/1000;
+        % spike_train=zeros(1,length(t));
+        % spike_train(ismembertol(t,spikes))=1;
+        % glmTbl=table();
+        % spike_idx=round(remap(find(spike_train),1,length(t),1,300*re_fs));
+        % spike_train=zeros(1,300*re_fs);
+        % spike_train(spike_idx)=1;
+        % spike_train(~logicalValidLFPs)=[];
 
-        glmTbl.WellSpikes=logical(spike_train');
+        %define burst train
+        burstTrain=zeros(1,length(t));
+        burstBounds=well_spike_dyn.BurstBounds{well_spike_dyn.regi==ff_axon_tbl.subi(nFF) & well_spike_dyn.fi==ff_axon_tbl.fi(nFF) & well_spike_dyn.channel_name==myWellElecs(nWell)};
+        for nBursts=1:size(burstBounds,1)
+            burstTrain(burstBounds(nBursts,1):burstBounds(nBursts,2))=1;
+        end
+        glmTbl=table();
+        burstTrainIdx=round(remap(find(burstTrain),1,length(t),1,300*re_fs));
+        burstTrain=zeros(1,length(re_t));
+        burstTrain(burstTrainIdx)=1;
+        burstTrain(~logicalValidLFPs)=[];
+        
+        glmTbl.WellBursts=logical(burstTrain');
         % glmTbl.ThetaAmp=ThetaAmp';
         glmTbl.ThetaAmp=zscore(ThetaAmp'); %toggle to zscore
         % glmTbl.ThetaAngle=discretize(ThetaAngle',angle_edges,angle_edges(2:end));
@@ -205,8 +219,8 @@ for nFF=1:height(ff_axon_tbl)%[95,96,117]
         %     'ThetaAmp*ThetaAngle'];
         % modelspec=['WellSpikes ~ ThetaAmp + ThetaAngle + DeltaAmp + DeltaAngle + '...
         %     'ThetaAmp*ThetaAngle*DeltaAmp*DeltaAngle'];
-        % modelspec='WellSpikes ~ ThetaAmp*(ThetaAngle+SinThetaAngle+CosThetaAngle)';
-        modelspec='WellSpikes ~ ThetaAmp*(CosThetaAngle)'; %refined from all three angle variations
+        % modelspec='WellBursts ~ ThetaAmp*(ThetaAngle+SinThetaAngle+CosThetaAngle)';
+        modelspec='WellBursts ~ ThetaAmp*(CosThetaAngle)'; %refined from all three angle variations
         % modelspec='WellSpikes ~ ThetaAmp:ThetaAngle';
         % modelspec=['WellSpikes ~ ThetaAmp*ThetaAngle*SinThetaAngle*CosThetaAngle' ...
         %     '*DeltaAmp*DeltaAngle*SinDeltaAngle*CosDeltaAngle'];
@@ -244,34 +258,20 @@ end
 for subi=1:length(interRegions)
     glmScatter(glmTblAll,"mdl",2,interRegions(subi),0.05)
 end
-
-%% CosAngle V Mdl by subregion
-
-for subi=1:length(interRegions)
-    glmScatter(glmTblAll,"mdl",5,interRegions(subi),0.05)
-end
-%% CosAngle V SinAngle by subregion
-
-for subi=1:length(interRegions)
-    glmScatter(glmTblAll,4,5,interRegions(subi),0.05)
-end
 %% Angle V Mdl by subregion
 
 for subi=1:length(interRegions)
     glmScatter(glmTblAll,"mdl",3,interRegions(subi),0.05)
 end
-%% Cos Angle V Amp by subregion
 
-for subi=1:length(interRegions)
-    glmScatter(glmTblAll,2,5,interRegions(subi),0.05)
-end
 %% Angle V Amp by subregion
 
 for subi=1:length(interRegions)
     glmScatter(glmTblAll,2,3,interRegions(subi),0.05)
 end
-%% Amp:CosAngle V Mld by subregion
+
+%% Amp:Cos V Mod by subregion
 
 for subi=1:length(interRegions)
-    glmScatter(glmTblAll,"mdl",8,interRegions(subi),0.05)
+    glmScatter(glmTblAll,"mdl",4,interRegions(subi),0.05)
 end

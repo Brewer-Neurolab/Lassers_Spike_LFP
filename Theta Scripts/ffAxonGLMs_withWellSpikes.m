@@ -1,8 +1,9 @@
 %% GLM for Feedforward Axons
-
+% Uses only the wells with spikes, not all wells
 %% Setup
 clear
 clc
+close all
 
 parent_axons_dir="D:\Brewer lab data\Slow Oscillation 4 Chamber 5 Tunnel Arrays\4x 210715 210806\1\18-Apr-2023_A";
 axons_dir=dir(parent_axons_dir);
@@ -162,7 +163,8 @@ for nFF=1:height(ff_axon_tbl)%[95,96,117]
     % 
     % close all
 
-    myWellElecs=wellElecs.electrode(wellElecs.subregion==ff_axon_tbl.FFReg(nFF));
+    % myWellElecs=wellElecs.electrode(wellElecs.subregion==ff_axon_tbl.FFReg(nFF));
+    myWellElecs=well_spike_dyn.channel_name(well_spike_dyn.regi==ff_axon_tbl.subi(nFF) & well_spike_dyn.fi==ff_axon_tbl.fi(nFF));
     
     for nWell=1:length(myWellElecs)
         angle_edges=[-pi:pi/180*18:pi];
@@ -248,7 +250,7 @@ end
 %% CosAngle V Mdl by subregion
 
 for subi=1:length(interRegions)
-    glmScatter(glmTblAll,"mdl",5,interRegions(subi),0.05)
+    glmScatter(glmTblAll,"mdl",3,interRegions(subi),0.05)
 end
 %% CosAngle V SinAngle by subregion
 
@@ -263,7 +265,7 @@ end
 %% Cos Angle V Amp by subregion
 
 for subi=1:length(interRegions)
-    glmScatter(glmTblAll,2,5,interRegions(subi),0.05)
+    glmScatter(glmTblAll,2,3,interRegions(subi),0.05)
 end
 %% Angle V Amp by subregion
 
@@ -273,5 +275,5 @@ end
 %% Amp:CosAngle V Mld by subregion
 
 for subi=1:length(interRegions)
-    glmScatter(glmTblAll,"mdl",8,interRegions(subi),0.05)
+    glmScatter(glmTblAll,"mdl",4,interRegions(subi),0.05)
 end
