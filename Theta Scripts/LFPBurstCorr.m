@@ -1,4 +1,3 @@
-%% Axon to Well Amplitude and Spike Relation Test for Theta
 %% Setup
 clear
 clc
@@ -89,48 +88,100 @@ for nFF=1:height(ff_axon_tbl)
     [LFPEndPts,LFPAmplitude,LFPHilbert]=identify_lfps(data,re_fs,t_rec,thresh_mult,minLFPLength,minLFPCycles,nsamples_combine_thresh);
     LFPAngles=wrapTo360(angle(LFPHilbert)*(180/pi));
 
+    % valid LFP indices defined by thresholding algorithm, all idxs above
+    % thresh are valid for axonal LFPs
     validLFPIndex=[];
+    maxLFP=[];
+    maxLFPIdxs=[];
+    LFPLength=[];
     for nEndPts=1:size(LFPEndPts,1)
-        validLFPIndex=[validLFPIndex,LFPEndPts(nEndPts,1):LFPEndPts(nEndPts,2)];
+        myRange=LFPEndPts(nEndPts,1):LFPEndPts(nEndPts,2);
+        validLFPIndex=[validLFPIndex,myRange];
+        [maxLFP(nEndPts),maxLoc]=max(LFPAmplitude(myRange));
+        maxLFPIdxs(nEndPts)=myRange(maxLoc);
+        LFPLength(nEndPts)=length(myRange)/re_fs*1000;
     end
-    logicalValidLFPs=zeros(1,length(re_t)); % uncomment for lower bound LFP
-    % logicalValidLFPs=ones(1,length(re_t)); % considers all LFPs
+    logicalValidLFPs=zeros(1,length(re_t));
     logicalValidLFPs(validLFPIndex)=1;
 
-    % Regression tests
+    %plot maximums ID'd
+    xlabel("Time (s)")
+    ylabel("uV")
+    title("FID "+ff_axon_tbl.fi(nFF)+" "+ff_axon_tbl.Electrode(nFF))
+
+    hold on
+    scatter(maxLFPIdxs/re_fs,maxLFP,20,"blue","filled")
+
     targetElecs=well_spike_dyn.channel_name(well_spike_dyn.fi==ff_axon_tbl.fi(nFF) & well_spike_dyn.regi==ff_axon_tbl.subi(nFF));
     targetReg=subregions(well_spike_dyn.regi(well_spike_dyn.fi==ff_axon_tbl.fi(nFF) & well_spike_dyn.regi==ff_axon_tbl.subi(nFF)));
     sourceReg=ff_axon_tbl.Subregion(nFF);
-    myTable=sourceLFP_targetSpike_relations(t,re_t,data,logicalValidLFPs,LFPEndPts,LFPAmplitude,LFPAngles,ff_axon_tbl.fi(nFF),ff_axon_tbl.Electrode(nFF),sourceReg,targetElecs,targetReg,well_spike_dyn,20,thresh_mult,...
-        fullfile(parent_wells_dir,wells_folders(ff_axon_tbl.fi(nFF))+"\"),...
-        "C:\Users\lasss\Documents\Research\Brewer Lab work\Code\Lassers_Spike_LFP\Images\Theta\Spikes");
 
-    if isempty(relationTable)
-        relationTable=myTable;
-    else
-        relationTable=[relationTable;myTable];
+    myTable=table();
+    for nTargets=1:length(targetElecs)
+        validBursts=[];
+        burstBounds=rescale(well_spike_dyn.BurstBounds{well_spike_dyn.fi==ff_axon_tbl.fi(nFF) & well_spike_dyn.regi==ff_axon_tbl.subi(nFF) & well_spike_dyn.channel_name==targetElecs(nTargets)},1,length(re_t));
+        validBursts=burstBounds(ismembertol(round(burstBounds(:,1)),validLFPIndex,10^-10),1);
+        nonValidBursts=burstBounds(~ismembertol(round(burstBounds(:,1)),validLFPIndex,10^-10),1);
+        
+        burstLength=well_spike_dyn.BurstDuration{well_spike_dyn.fi==ff_axon_tbl.fi(nFF) & well_spike_dyn.regi==ff_axon_tbl.subi(nFF) & well_spike_dyn.channel_name==targetElecs(nTargets)};
+        validBurstLengths=burstLength(ismembertol(round(burstBounds(:,1)),validLFPIndex,10^-10),1);
+
+        spikesPerBurst=
+
+        nearestMax=[];
+        nearestMaxLoc=[];
+        nearestLFPLength=[];
+        for nBursts=1:length(validBursts)
+            [~,nearestLoc]=min(abs(validBursts(nBursts)-maxLFPIdxs));
+            nearestMaxLoc(nBursts)=maxLFPIdxs(nearestLoc);
+            nearestMax(nBursts)=maxLFP(nearestLoc);
+            nearestLFPLength(nBursts)=LFPLength(nearestLoc);
+        end
+
+        myTable.fi(nTargets)=ff_axon_tbl.fi(nFF);
+        myTable.sourceElec(nTargets)=ff_axon_tbl.Electrode(nFF);
+        myTable.sourceReg(nTargets)=ff_axon_tbl.Subregion(nFF);
+        myTable.regi(nTargets)=ff_axon_tbl.fi(nFF);
+        myTable.targetElec(nTargets)=targetElecs(nTargets);
+        myTable.targetReg(nTargets)=targetReg(nTargets);
+        myTable.burstStarts{nTargets}=validBursts;
+        myTable.burstLengths{nTargets}=validBurstLengths;
+        myTable.LFPMax{nTargets}=nearestMax;
+        myTable.LFPMaxIdx{nTargets}=nearestMaxLoc;
+        myTable.BurstsWithoutLFP{nTargets}=nonValidBursts;
+        myTable.LFPLengths{nTargets}=nearestLFPLength;
+        myTable.PercentBurstsInLFP{nTargets}=length(validBursts)/(length(validBursts)+length(nonValidBursts))*100;
+        
     end
 
-    disp(nFF+" of "+height(ff_axon_tbl))
-
-    close all force
+    relationTable=[relationTable;myTable];
 end
 
-save(fullfile(saveDir,"relationTable"),"relationTable")
-%% Good Relationships
+%% Test scatter
 
-%calculate false discovery rates for amp and angle
-[~,IAmp]=sort(relationTable.ampPval);
-[relationTable.ampFDR,relationTable.ampFDRh,largestAmpP]=myFalseDiscoveryRate(IAmp,length(IAmp),0.05,relationTable.ampPval);
+figure
+scatter(relationTable.burstStarts{495},relationTable.LFPMaxIdx{495})
 
-[~,IAngle]=sort(relationTable.anglePval);
-[relationTable.angleFDR,relationTable.angleFDRh,largestAngleP]=myFalseDiscoveryRate(IAngle,length(IAngle),0.05,relationTable.anglePval);
+%% Test scatter lfp length
 
-goodRelationsTbl=relationTable((relationTable.ampPval<0.05 | relationTable.anglePval<0.05)...
-    & relationTable.nAmpSpikesMax>20 & relationTable.nAngleSpikesMax>20 & relationTable.nHeatmapMax>10,:);
-goodRelationsTblFDR=relationTable((relationTable.ampFDRh & relationTable.angleFDRh)...
-    & relationTable.nAmpSpikesMax>20 & relationTable.nAngleSpikesMax>20 & relationTable.nHeatmapMax>10,:);
+figure
+scatter(relationTable.LFPLengths{495},relationTable.burstLengths{495})
+xlabel("LFP Length (ms)")
+ylabel("Burst Length (ms)")
 
-save(fullfile(saveDir,"goodRelationsTbl"),"goodRelationsTbl")
-save(fullfile(saveDir,"goodRelationsTblFDR"),"goodRelationsTblFDR")
+%% Test scatter lfp 
 
+mdl=fitlm(relationTable.LFPMax{495},relationTable.burstLengths{495});
+figure
+plot(mdl)
+
+figure
+scatter(relationTable.LFPMax{495},relationTable.burstLengths{495})
+xlabel("LFP Amp (uV)")
+ylabel("Burst Length (ms)")
+
+hold on
+x=linspace(min(relationTable.LFPMax{495}),max(relationTable.LFPMax{495}),10);
+y=x*mdl.Coefficients.Estimate(2)+mdl.Coefficients.Estimate(1);
+plot(x,y,'r--')
+legend("R^2="+mdl.Rsquared.Adjusted)

@@ -446,8 +446,8 @@ thetaPower1=sum(thetaPowerCFS,"all");
 %% Bar chart of theta powers
 % Powers are divided by frequency for normalization
 figure
-cats=categorical(["Real Spikes","Single Spike","5 Hz Spikes","200 Hz Spikes"]);
-cats=reordercats(cats,["Real Spikes","Single Spike","5 Hz Spikes","200 Hz Spikes"]);
+cats=categorical(["Raw","Single","5 Hz","200 Hz x3"]);
+cats=reordercats(cats,["Raw","Single","5 Hz","200 Hz x3"]);
 bar(cats,[thetaPowerRaw,thetaPower1,thetaPower5Hz,thetaPower200Hz])
 ax=gca;
 ax.YScale="log";
@@ -455,7 +455,7 @@ ylim([10^3,10^8])
 ax.FontSize=14;
 ylabel("Power uV^2")
 ax=gca;
-set(ax,"FontSize",18)
+set(ax,"FontSize",24)
 ax.TickLength(1)=0.05;
 ax.LineWidth=2;
 ax.XMinorTick="on";

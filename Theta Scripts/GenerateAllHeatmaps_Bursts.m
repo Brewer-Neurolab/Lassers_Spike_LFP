@@ -28,7 +28,7 @@ ff_axon_tbl=table();
 row=1;
 for fi=1:length(axon_spikes)
     for nelec=1:height(axon_spikes{fi})
-        if ~isempty(axon_spikes{fi}.up_ff{nelec}) | (~isempty(axon_spikes{fi}.up_fb{nelec}) & axon_spikes{fi}.Subregion(nelec)=="CA1-EC")
+        if ~isempty(axon_spikes{fi}.up_ff{nelec})
             ff_axon_tbl.fi(row)=fi;
             ff_axon_tbl.Subregion(row)=axon_spikes{fi}.Subregion(nelec);
             ff_axon_tbl.interRegi(row)=find(interRegions==axon_spikes{fi}.Subregion(nelec));
@@ -38,13 +38,6 @@ for fi=1:length(axon_spikes)
             tunnelReg=split(axon_spikes{fi}.Subregion(nelec),{'-'});
             ff_axon_tbl.FFReg(row)=tunnelReg(2);
             ff_axon_tbl.subi(row)=find(subregions==tunnelReg(2));
-
-            if isempty(axon_spikes{fi}.up_ff{nelec}) & ~isempty(axon_spikes{fi}.up_fb{nelec}) & axon_spikes{fi}.Subregion(nelec)=="CA1-EC"
-                ff_axon_tbl.Subregion(row)="EC-CA1";
-                ff_axon_tbl.FFReg(row)="CA1";
-                ff_axon_tbl.subi(row)=4;
-            end
-
             row=row+1;
         end
     end
@@ -65,7 +58,7 @@ testing_idx=[find(ff_axon_tbl.Subregion=="DG-CA3")]';
 
 relationTable=[];
 
-for nFF=1:height(ff_axon_tbl)
+for nFF=30%1:height(ff_axon_tbl)
     data=load(fullfile(parent_axons_dir,axons_folders(ff_axon_tbl.fi(nFF)),ff_axon_tbl.Electrode(nFF)+".mat"));
     % re_fs=data.re_fs;
     re_fs=1000;
@@ -93,17 +86,16 @@ for nFF=1:height(ff_axon_tbl)
     for nEndPts=1:size(LFPEndPts,1)
         validLFPIndex=[validLFPIndex,LFPEndPts(nEndPts,1):LFPEndPts(nEndPts,2)];
     end
-    logicalValidLFPs=zeros(1,length(re_t)); % uncomment for lower bound LFP
-    % logicalValidLFPs=ones(1,length(re_t)); % considers all LFPs
+    logicalValidLFPs=zeros(1,length(re_t));
     logicalValidLFPs(validLFPIndex)=1;
 
     % Regression tests
     targetElecs=well_spike_dyn.channel_name(well_spike_dyn.fi==ff_axon_tbl.fi(nFF) & well_spike_dyn.regi==ff_axon_tbl.subi(nFF));
     targetReg=subregions(well_spike_dyn.regi(well_spike_dyn.fi==ff_axon_tbl.fi(nFF) & well_spike_dyn.regi==ff_axon_tbl.subi(nFF)));
     sourceReg=ff_axon_tbl.Subregion(nFF);
-    myTable=sourceLFP_targetSpike_relations(t,re_t,data,logicalValidLFPs,LFPEndPts,LFPAmplitude,LFPAngles,ff_axon_tbl.fi(nFF),ff_axon_tbl.Electrode(nFF),sourceReg,targetElecs,targetReg,well_spike_dyn,20,thresh_mult,...
+    myTable=sourceLFP_targetSpike_BurstRelations(t,re_t,data,logicalValidLFPs,LFPEndPts,LFPAmplitude,LFPAngles,ff_axon_tbl.fi(nFF),ff_axon_tbl.Electrode(nFF),sourceReg,targetElecs,targetReg,well_spike_dyn,20,thresh_mult,...
         fullfile(parent_wells_dir,wells_folders(ff_axon_tbl.fi(nFF))+"\"),...
-        "C:\Users\lasss\Documents\Research\Brewer Lab work\Code\Lassers_Spike_LFP\Images\Theta\Spikes");
+        "C:\Users\lasss\Documents\Research\Brewer Lab work\Code\Lassers_Spike_LFP\Images\Theta\Bursts");
 
     if isempty(relationTable)
         relationTable=myTable;
@@ -113,10 +105,10 @@ for nFF=1:height(ff_axon_tbl)
 
     disp(nFF+" of "+height(ff_axon_tbl))
 
-    close all force
+    % close all force
 end
 
-save(fullfile(saveDir,"relationTable"),"relationTable")
+% save(fullfile(saveDir,"relationTable"),"relationTable")
 %% Good Relationships
 
 %calculate false discovery rates for amp and angle
@@ -131,6 +123,6 @@ goodRelationsTbl=relationTable((relationTable.ampPval<0.05 | relationTable.angle
 goodRelationsTblFDR=relationTable((relationTable.ampFDRh & relationTable.angleFDRh)...
     & relationTable.nAmpSpikesMax>20 & relationTable.nAngleSpikesMax>20 & relationTable.nHeatmapMax>10,:);
 
-save(fullfile(saveDir,"goodRelationsTbl"),"goodRelationsTbl")
-save(fullfile(saveDir,"goodRelationsTblFDR"),"goodRelationsTblFDR")
+% save(fullfile(saveDir,"goodRelationsTbl"),"goodRelationsTbl")
+% save(fullfile(saveDir,"goodRelationsTblFDR"),"goodRelationsTblFDR")
 

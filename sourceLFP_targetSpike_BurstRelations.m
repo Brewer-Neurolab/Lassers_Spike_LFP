@@ -1,17 +1,16 @@
-function relationTable=sourceLFP_targetSpike_relations(t,re_t,myData,logicalValidLFPs,LFPEndPts,LFPAmplitude,LFPAngles,fi,sourceElec,sourceReg,targetElecs,targetReg,well_spike_dyn,nYbin,thresh_mult,parent_dir,save_dir)
+function relationTable=sourceLFP_targetSpike_BurstRelations(t,re_t,myData,logicalValidLFPs,LFPEndPts,LFPAmplitude,LFPAngles,fi,sourceElec,sourceReg,targetElecs,targetReg,well_spike_dyn,nYbin,thresh_mult,parent_dir,save_dir)
 
-logicalValidLFPs=logical(logicalValidLFPs);
 relationTable=table();
 row=1;
 
-thetaAmpThresh=std(LFPAmplitude)*thresh_mult+mean(LFPAmplitude);
+thetaAmpThresh=std(LFPAmplitude)*thresh_mult;
 ampEdges=logspace(log10(thetaAmpThresh),log10(max(LFPAmplitude)),nYbin+1);
-% ampEdges=logspace(log10(min(LFPAmplitude(logicalValidLFPs))),log10(max(LFPAmplitude)),nYbin+1);
 ampCenters=convert_edges_2_centers(log10(ampEdges));
 ampCenters=10.^ampCenters;
 angleEdges=[0:18:360];
 angleCenters=convert_edges_2_centers(angleEdges);
 angleEdges2Cycle=[-360:18:360];
+logicalValidLFPs=logical(logicalValidLFPs);
 
 figure
 tf=tiledlayout(1,3);
@@ -44,10 +43,6 @@ title(tf,sourceElec+" axon distributions")
 
 nIter=100;
 for nElec=1:length(targetElecs)
-    well_spikes=load(parent_dir+targetElecs(nElec)+"_spikes.mat");
-    well_spikes=well_spikes.index/1000; % in seconds
-    well_spikes_idx=find(ismembertol(t,well_spikes));
-    % well_spikes=remap(well_spikes,1/1000,300,1/25000,300);
     
     disp("Calculating "+targetElecs(nElec))
     well_burst_bounds=well_spike_dyn.BurstBounds{well_spike_dyn.fi==fi & well_spike_dyn.channel_name==targetElecs(nElec)};
@@ -59,22 +54,22 @@ for nElec=1:length(targetElecs)
     burstIdx=ismembertol(well_burst_starts,find(logicalBurstStarts & logicalValidLFPs),1e-10);
     burstIdx=find(burstIdx);
     myBurstBounds=well_burst_bounds(burstIdx,:);
-    validWellSpikes=[];
+    validWellBursts=[];
     for nBursts=1:size(myBurstBounds,1)
-        validWellSpikes=[validWellSpikes,well_spikes_idx(well_spikes_idx>=myBurstBounds(nBursts,1) & well_spikes_idx<=myBurstBounds(nBursts,2))];
+        validWellBursts=[validWellBursts,myBurstBounds(nBursts,1):myBurstBounds(nBursts,2)];
     end
     % well_spikes_idx=t(validWellSpikes);
-    validWellSpikes=round(remap(validWellSpikes,1,length(t),1,length(re_t)));
-    logicalValidSpikes=zeros(1,length(re_t));
-    logicalValidSpikes(validWellSpikes)=1;
-    logicalValidSpikes=logical(logicalValidSpikes);
+    validWellBursts=round(remap(validWellBursts,1,length(t),1,length(re_t)));
+    logicalValidBursts=zeros(1,length(re_t));
+    logicalValidBursts(validWellBursts)=1;
+    logicalValidBursts=logical(logicalValidBursts);
 
     nBurstsCounter(nElec)=sum(logicalBurstStarts & logicalValidLFPs);
 
     % figure
-    wellBurstAngles=LFPAngles(logicalValidSpikes & logicalValidLFPs);
+    wellBurstAngles=LFPAngles(logicalValidBursts & logicalValidLFPs);
     % wellBurstAngles=[wellBurstAngles-360,wellBurstAngles];
-    wellBurstAmp=LFPAmplitude(logicalValidSpikes & logicalValidLFPs);
+    wellBurstAmp=LFPAmplitude(logicalValidBursts & logicalValidLFPs);
 
     wellBurstStartAngles=LFPAngles(logicalBurstStarts & logicalValidLFPs);
     % wellBurstStartAngles=[wellBurstStartAngles-360,wellBurstStartAngles];
@@ -90,20 +85,12 @@ for nElec=1:length(targetElecs)
     % tf=tiledlayout(3,2,"Padding","tight","TileSpacing","tight");
     % well spikes vs amplitude
     % nexttile
-    hamp=histogram(wellBurstAmp,ampEdges);
+    histogram(wellBurstAmp,ampEdges)
     ampProbs=histcounts(wellBurstAmp,ampEdges,"Normalization","probability");
     ampCounts=histcounts(wellBurstAmp,ampEdges);
     ampMI=modulationIndex(ampProbs);
-
-    %shuffling tests for pval
-    ampPval=shuffleLFP_ModIdx(ampMI,LFPAmplitude,find(logicalValidLFPs),logicalValidSpikes,ampEdges,nIter);
+    ampPval=shuffleLFP_ModIdx(ampMI,LFPAmplitude,find(logicalValidLFPs),logicalValidBursts,ampEdges,nIter);
     % ampPval=circShuffleLFP_ModIdx(ampMI,LFPAmplitude,LFPEndPts,logicalValidSpikes,ampEdges,nIter);
-    % ampPval=jitterLFP_ModIdx(ampMI,LFPAmplitude,find(logicalValidLFPs),logicalValidSpikes,ampEdges,nIter,100,1000);
-    
-    %slope fit test for pval
-    % mdl=fitlm(log10(ampCenters),hamp.Values);
-    % ampPval=mdl.Coefficients.pValue(2);
-    
     set(gca,"XScale","log")
     % set(gca,"FontSize",24)
     % axis square
@@ -116,13 +103,13 @@ for nElec=1:length(targetElecs)
     ax.LineWidth=4;
     ax.TickLength=[0.01 0.05];
 
-    title("Well Spikes VS Amplitude")
+    title("Well Burst Times VS Amplitude")
     if ampPval<1/nIter
         subtitle("mod idx="+round(ampMI,2)+" p<"+1/nIter)
     else
-        subtitle("mod idx="+round(ampMI,2,"significant")+" p="+round(ampPval,2,"significant"))
+        subtitle("mod idx="+round(ampMI,2,"significant")+" p="+ampPval)
     end
-    ylabel("Spikes")
+    ylabel("Burst Times")
     xlabel("Amplitude uV")
     set(gca,"FontSize",50)
     set(gca,"Position",[0.13,0.2,0.7750,0.6])
@@ -136,19 +123,19 @@ for nElec=1:length(targetElecs)
     angleProbs=histcounts(wellBurstAngles,angleEdges,"Normalization","probability");
     angleCounts=histcounts(wellBurstAngles,angleEdges);
     angleMI=modulationIndex(angleProbs);
-    anglePval=fftShuffleLFP_ModIdx(angleMI,myData,LFPEndPts,logicalValidSpikes,angleEdges,nIter,"angle");
+    anglePval=fftShuffleLFP_ModIdx(angleMI,myData,LFPEndPts,logicalValidBursts,angleEdges,nIter,"angle");
     % axis square
     pbaspect([2,1,1])
     xlim([-180,180])
     % xticks(angleEdges2Cycle(1:2:end))
     xticks([-180,-90,0,90,180])
-    title("Well Spikes VS Angle")
+    title("Well Burst Times VS Angle")
     if anglePval<1/nIter
         subtitle("mod idx="+round(angleMI,2)+" p<"+1/nIter)
     else
         subtitle("mod idx="+round(angleMI,2)+" p="+anglePval)
     end
-    ylabel("Spikes")
+    ylabel("BurstTimes")
     xlabel("Angle")
     xtickangle(0)
     set(gca,"FontSize",50)
@@ -255,12 +242,11 @@ for nElec=1:length(targetElecs)
         colormap hot
         cb.Limits=myCLim;
         clim(myCLim)
-        ylabel(cb,'#Spikes','FontSize',40,'Rotation',270)
+        ylabel(cb,'#BurstTimes','FontSize',40,'Rotation',270)
         if maxHeightAll>=5
             cb.Ticks=round(linspace(0,maxHeightAll,5));
         end
         % saveas(gcf,fullfile(save_dir,"HeatMap "+sourceElec+"-"+targetElecs(nElec)+" FID "+fi),"png")
-
         axis square
 
         saveas(gcf,fullfile(save_dir,"HeatMap "+sourceElec+"-"+targetElecs(nElec)+" FID "+fi),"png")
