@@ -105,7 +105,7 @@ for j=1:length(allregion_unit_matched_stim)
         if ~isempty(allregion_unit_matched_stim{j}.ff_cdt{i}) | ~isempty(allregion_unit_matched_stim{j}.fb_cdt{i})
 
             %load file from down samples
-            cd("C:\BrewerLabResearch\OneDrive_1_7-16-2025\downsampled tunnels\Low_Gamma")
+            cd("C:\BrewerLabResearch\OneDrive_1_7-16-2025\downsampled tunnels\High_Gamma")
             cd(folders(j))
 
             temp_dir= convertStringsToChars(matching_table{i,2});
@@ -148,7 +148,7 @@ for j=1:length(allregion_unit_matched_stim)
             %round spike data for 1000 hZ
             spike_data_rounded=round(spike_data,3);
 
-            for waves= 4%:length(LFPs)
+            for waves= 5%:length(LFPs)
 
                 LFP_tab=innit_tab;
 
@@ -281,7 +281,7 @@ toc
 % load("D:\Brewer lab data\Slow Oscillation 4 Chamber 5 Tunnel Arrays\4x 210715 210806\1\coherence\spike_amp_phase_struct.mat")
 %% by subregion plot of power distributuion PEAKS
 close all
-save_dir="C:\BrewerLabResearch\OneDrive_1_7-16-2025\coherence\spikecount_v_avgpower\tunnel\all";
+save_dir="C:\BrewerLabResearch\OneDrive_1_7-16-2025\coherence\spikecount_v_avgpower\tunnel\all\High_Gamma";
 
 binEdges=logspace(-1,4,16);
 binCenters=convert_edges_2_centers(binEdges);
@@ -298,7 +298,7 @@ for regi=1:length(subregions)
     hold(ax, 'on')
     avg_power_count=[];
     se_power_count=[];
-    for freq_bands=4%:length(LFPs)
+    for freq_bands=5%:length(LFPs)
         chans_log=spike_amp_phase_struct.(LFPs{freq_bands}).Subregion==subregions(regi);
         chan_power=spike_amp_phase_struct.(LFPs{freq_bands})(chans_log,:);
         my_chans=chan_power(:,[1,3]);
