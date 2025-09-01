@@ -414,7 +414,7 @@ myThresh=[];
 powers=[];
 power_regions=[];
 
-for freq_bands=4%:length(LFPs)
+for freq_bands=5%:length(LFPs)
     ff_mean=[];
     ff_se=[];
     ff_mean_logweight=[];

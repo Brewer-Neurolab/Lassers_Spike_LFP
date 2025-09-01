@@ -75,7 +75,7 @@ for nFF=1:height(ff_axon_tbl)
     nsamples_combine_thresh=(1/100)*re_fs*3;
     % nsamples_combine_thresh=[];
 
-    %define min lfp length as 2x shortest theta cycle
+    %define min lfp length as 2x shortest high gamma cycle
     minLFPCycles=2; %default 2
     minLFPLength=(1/100)*minLFPCycles*re_fs;
 
@@ -95,7 +95,7 @@ for nFF=1:height(ff_axon_tbl)
     sourceReg=ff_axon_tbl.Subregion(nFF);
     myTable=sourceLFP_targetSpike_relations_NoThresh(t,re_t,data,logicalValidLFPs,LFPEndPts,LFPAmplitude,LFPAngles,ff_axon_tbl.fi(nFF),ff_axon_tbl.Electrode(nFF),sourceReg,targetElecs,targetReg,well_spike_dyn,20,thresh_mult,...
         fullfile(parent_wells_dir,wells_folders(ff_axon_tbl.fi(nFF))+"\"),...
-        "C:\BrewerLabResearch\GitHub\Lassers_Spike_LFP\Gamma Scripts\Images");
+        "C:\BrewerLabResearch\GitHub\Lassers_Spike_LFP\Gamma Scripts\Images_Low");
 
     if isempty(relationTable)
         relationTable=myTable;

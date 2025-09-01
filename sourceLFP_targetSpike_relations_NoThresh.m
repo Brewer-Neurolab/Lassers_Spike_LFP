@@ -300,8 +300,8 @@ for nElec=1:length(targetElecs)
         set(gca,"FontSize",50)
 
         xticks([-180,-90,0,90,180])
-        yticks(binyedges{nElec}(1:4:end))
-        yticklabels(round(binyedges{nElec}(1:4:end),2,"significant"))
+        yticks([2,5,10,20,50,100,200,500,1000,5000])
+        yticklabels([2,5,10,20,50,100,200,500,1000,5000])
         set(gca,'YDir','normal')
         set(gca,"YScale","log")
 
