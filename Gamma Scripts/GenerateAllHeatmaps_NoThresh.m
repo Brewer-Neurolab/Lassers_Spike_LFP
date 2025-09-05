@@ -12,7 +12,7 @@ axons_folders=string({axons_dir.name});
 axons_folders=axons_folders([axons_dir.isdir]);
 axons_folders=axons_folders(3:end);
 
-parent_wells_dir="C:\BrewerLabResearch\OneDrive_1_7-16-2025\Well Spikes";
+parent_wells_dir="C:\BrewerLabResearch\OneDrive_1_7-16-2025\Well Spikes 5SD Min";
 wells_dir=dir(parent_wells_dir);
 wells_folders=string({wells_dir.name});
 wells_folders=wells_folders([wells_dir.isdir]);
@@ -47,7 +47,7 @@ end
 %%well_spike_dyn=load("C:\BrewerLabResearch\OneDrive_1_7-16-2025\Well Spikes\well_spike_dynamics_table_hfs_3-5.mat");
 
 %5SD
-well_spike_dyn=load("C:\BrewerLabResearch\OneDrive_1_7-16-2025\Well Spikes\well_spike_dynamics_table_hfs.mat")
+well_spike_dyn=load("C:\BrewerLabResearch\OneDrive_1_7-16-2025\Well Spikes 5SD Min\well_spike_dynamics_table_hfs.mat")
 
 well_spike_dyn=well_spike_dyn.well_spike_dynamics_table;
 %% Compute MI and heat maps
@@ -75,7 +75,7 @@ for nFF=1:height(ff_axon_tbl)
     nsamples_combine_thresh=(1/100)*re_fs*3;
     % nsamples_combine_thresh=[];
 
-    %define min lfp length as 2x shortest high gamma cycle
+    %define min lfp length as 2x shortest gamma cycle
     minLFPCycles=2; %default 2
     minLFPLength=(1/100)*minLFPCycles*re_fs;
 

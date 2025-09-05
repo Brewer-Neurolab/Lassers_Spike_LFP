@@ -9,7 +9,7 @@ ampEdges=logspace(log10(thetaAmpThresh),log10(max(LFPAmplitude)),nYbin+1);
 % ampEdges=logspace(log10(min(LFPAmplitude(logicalValidLFPs))),log10(max(LFPAmplitude)),nYbin+1);
 ampCenters=convert_edges_2_centers(log10(ampEdges));
 ampCenters=10.^ampCenters;
-angleEdges=[0:18:360];
+angleEdges=[-180:18:180];
 angleCenters=convert_edges_2_centers(angleEdges);
 angleEdges2Cycle=[-360:18:360];
 
