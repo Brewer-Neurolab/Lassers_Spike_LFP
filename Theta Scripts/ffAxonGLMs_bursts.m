@@ -10,7 +10,7 @@ axons_folders=string({axons_dir.name});
 axons_folders=axons_folders([axons_dir.isdir]);
 axons_folders=axons_folders(3:end);
 
-parent_wells_dir="D:\Brewer lab data\Slow Oscillation 4 Chamber 5 Tunnel Arrays\4x 210715 210806\1\Well Spikes";
+parent_wells_dir="D:\Brewer lab data\Slow Oscillation 4 Chamber 5 Tunnel Arrays\4x 210715 210806\1\Well Spikes 5SD Min";
 wells_dir=dir(parent_wells_dir);
 wells_folders=string({wells_dir.name});
 wells_folders=wells_folders([wells_dir.isdir]);
@@ -42,10 +42,10 @@ for fi=1:length(axon_spikes)
 end
 
 %3.5 SD
-well_spike_dyn=load("D:\Brewer lab data\Slow Oscillation 4 Chamber 5 Tunnel Arrays\4x 210715 210806\1\Well Spikes\well_spike_dynamics_table_hfs_3-5.mat");
+% well_spike_dyn=load("D:\Brewer lab data\Slow Oscillation 4 Chamber 5 Tunnel Arrays\4x 210715 210806\1\Well Spikes\well_spike_dynamics_table_hfs_3-5.mat");
 
 %5SD
-% well_spike_dyn=load("D:\Brewer lab data\Slow Oscillation 4 Chamber 5 Tunnel Arrays\4x 210715 210806\1\Well Spikes 5SD Min\well_spike_dynamics_table_hfs.mat")
+well_spike_dyn=load("D:\Brewer lab data\Slow Oscillation 4 Chamber 5 Tunnel Arrays\4x 210715 210806\1\Well Spikes 5SD Min\well_spike_dynamics_table_hfs.mat");
 
 well_spike_dyn=well_spike_dyn.well_spike_dynamics_table;
 %% Compute GLM
@@ -252,7 +252,12 @@ for nConnect=1:height(glmTblAll)
     toRemove=myFields(ismember(myFields,["Design","design_r","y_r","w_r","ObservationInfo","Data","Variables","Offset","IRLSWeights","Residuals","Leverage"]));
     glmTblAll.mdl{nConnect}=rmfield(lowInfoGLM,toRemove);
 end
-
+%% Count significant by subregion
+for subi=1:length(interRegions)
+    subTbl=glmTblAll(glmTblAll.source_reg==interRegions(subi),:);
+    BonferroniP=0.05/height(subTbl);
+    disp("#significant "+interRegions(subi)+"="+sum(subTbl.mdlPVal<BonferroniP)+"/"+height(subTbl))
+end
 %% Amp V Mdl by subregion
 
 for subi=1:length(interRegions)

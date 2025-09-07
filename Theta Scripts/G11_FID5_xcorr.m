@@ -150,7 +150,7 @@ xcorr_table=table();
 
 for nElec=1:length(CA3_Elec)
     myElec=load("D:\Brewer lab data\Slow Oscillation 4 Chamber 5 Tunnel Arrays\4x 210715 210806\1\downsampled wells\Theta\4x 33152 210715 21div 210806_1.h5\"+CA3_Elec(nElec)+".mat");
-    wellLFP=myElec.re_LFP;
+    wellLFP=myElec.filtered_data;
 
     [r,l]=xcorr(LFP,wellLFP,re_fs*1,"normalized");
     % [r,l]=xcorr(LFP(logicalValidLFPs),wellLFP(logicalValidLFPs),re_fs*2,"normalized");

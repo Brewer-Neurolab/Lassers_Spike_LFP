@@ -1,4 +1,4 @@
-function [ coeff, stats, opt_lim, log_X, log_y ] = find_powerlawfit_with_grid_search( X, y, xlimits, grid_lim)
+function [ coeff, stats, opt_lim, log_X, log_y ] = powerlawfit_grid_search( X, y, xlimits, grid_lim)
 
 %modification to define all outputs made by Sam Lassers 9/1/21
 coeff=[];
@@ -11,16 +11,16 @@ log_y=[];
 if ~exist('grid_lim','var')
     grid_lim = [0.5, 0.5]; %percentage value of changing x_start and x_stop
 end
-nbins = 100;
+nbins = 50;
 
 lim_grid = logspace(log10(xlimits(1)), log10(xlimits(2)), nbins);
 x_start_vec = lim_grid(lim_grid < (1+grid_lim(1))*xlimits(1));
-x_stop_vec = fliplr(lim_grid(lim_grid > (1-grid_lim(1))*xlimits(2)));
+x_stop_vec = fliplr(lim_grid(lim_grid > (1-(grid_lim(2)+grid_lim(1)))*xlimits(2)));
 
 rsq_vec = []; start_vec = []; stop_vec = [];
 for startn = x_start_vec
  for stopn = x_stop_vec
-     [~, stats] = find_powerlawfit_using_linear_regression_coeff(X, y, [startn, stopn]);
+     [~, stats] = powerlawfit_linear_regression_coeff(X, y, [startn, stopn]);
      rsq_vec = [rsq_vec; stats.Rsquared];
      start_vec = [start_vec; startn];
      stop_vec = [stop_vec; stopn];

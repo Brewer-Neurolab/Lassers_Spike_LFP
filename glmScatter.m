@@ -30,6 +30,9 @@ for nConnect=1:height(glmTbl)%find(table2array(glmTblAll(:,[1,2,3]))==table2arra
     colorVar(nConnect)=string(glmTbl.fi(nConnect))+glmTbl.source_elec(nConnect);
 end
 
+disp(subregion)
+disp(xlog10'+" "+ylog10')
+
 unique_sources=unique(colorVar);
 unique_colors=distinguishable_colors(numel(unique_sources));
 cVec=[];
@@ -92,8 +95,6 @@ ax.LineWidth=2;
 ax.TickLength=[0.05,0.05];
 
 axis square
-
-
 
 % Debug routine
 % figure

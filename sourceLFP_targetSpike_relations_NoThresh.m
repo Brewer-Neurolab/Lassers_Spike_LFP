@@ -9,7 +9,8 @@ ampEdges=logspace(log10(thetaAmpThresh),log10(max(LFPAmplitude)),nYbin+1);
 % ampEdges=logspace(log10(min(LFPAmplitude(logicalValidLFPs))),log10(max(LFPAmplitude)),nYbin+1);
 ampCenters=convert_edges_2_centers(log10(ampEdges));
 ampCenters=10.^ampCenters;
-angleEdges=[0:18:360];
+% angleEdges=[0:18:360];
+angleEdges=[-180:18:180];
 angleCenters=convert_edges_2_centers(angleEdges);
 angleEdges2Cycle=[-360:18:360];
 
@@ -41,6 +42,8 @@ xticks(angleEdges)
 set(gca,"YScale","log")
 
 title(tf,sourceElec+" axon distributions")
+
+bincount_cells_xy={};
 
 nIter=100;
 for nElec=1:length(targetElecs)
@@ -119,7 +122,7 @@ for nElec=1:length(targetElecs)
     %     coeff=[NaN,NaN];
     % end
     if max(ampCounts)>20
-        [coeff,stats,optlim,~,~]=find_powerlawfit_with_grid_search(ampCenters,ampCounts,[min(ampCenters),max(ampCenters)]);
+        [coeff,stats,optlim,~,~]=powerlawfit_grid_search(ampCenters,ampCounts,[min(ampCenters),max(ampCenters)],[0.1,0.6]);
         ampPval=stats.pValue(2);
         rsq=stats.Rsquared;
         if ~isempty(optlim)
@@ -179,14 +182,21 @@ for nElec=1:length(targetElecs)
     
     % saveas(gcf,fullfile(save_dir,"AmpMI "+sourceElec+"-"+targetElecs(nElec)+" FID "+fi+".png"),"png")
     %% Angle MI
-    %well spikes vs angle
+    % well spikes vs angle
     % nexttile
     fAngle=figure('Name',targetElecs(nElec)+" angle",'NumberTitle','off','WindowState','fullscreen');
     histogram([wellBurstAngles-360,wellBurstAngles],angleEdges2Cycle)
-    angleProbs=histcounts(wellBurstAngles,angleEdges,"Normalization","probability");
-    angleCounts=histcounts(wellBurstAngles,angleEdges);
+    % angleProbs=histcounts([wellBurstAngles-360,wellBurstAngles],angleEdges,"Normalization","probability");
+    angleProbs=histcounts(wrapTo180(wellBurstAngles),angleEdges,"Normalization","probability");
+    % angleCounts=histcounts([wellBurstAngles-360,wellBurstAngles],angleEdges);
+    angleCounts=histcounts(wrapTo180(wellBurstAngles),angleEdges);
     angleMI=modulationIndex(angleProbs);
+
+    % All angle shuffling for pval
+    % anglePval=shuffleLFP_ModIdx(angleMI,LFPAngles,find(logicalValidLFPs),logicalValidSpikes,angleEdges,nIter);
+    % anglePval=circShuffleLFP_ModIdx(angleMI,LFPAngles,LFPEndPts,logicalValidSpikes,angleEdges,nIter);
     anglePval=fftShuffleLFP_ModIdx(angleMI,myData,LFPEndPts,logicalValidSpikes,angleEdges,nIter,"angle");
+    
     % axis square
     pbaspect([2,1,1])
     xlim([-180,180])
@@ -240,12 +250,15 @@ for nElec=1:length(targetElecs)
         relationTable.sourceReg(row)=sourceReg;
         relationTable.targetElec(row)=targetElecs(nElec);
         relationTable.targetReg(row)=targetReg(nElec);
-        relationTable.ampMI(row)=ampMI;
+        % relationTable.ampMI(row)=ampMI;
+        relationTable.angleCounts{row}=angleCounts;
+        relationTable.angleProbs{row}=angleProbs;
         relationTable.angleMI(row)=angleMI;
-        relationTable.ampPval(row)=ampPval;
-        relationTable.rsq(row)=rsq;
-        relationTable.slope(row)=coeff(2);
         relationTable.anglePval(row)=anglePval;
+        relationTable.ampPval(row)=ampPval;
+        relationTable.slope(row)=coeff(2);
+        relationTable.rsq(row)=rsq;
+
         relationTable.nAmpSpikesMax(row)=max(ampCounts);
         relationTable.nAngleSpikesMax(row)=max(angleCounts);
         relationTable.nHeatmapMax(row)=0;
@@ -259,20 +272,23 @@ for nElec=1:length(targetElecs)
     relationTable.sourceReg(row)=sourceReg;
     relationTable.targetElec(row)=targetElecs(nElec);
     relationTable.targetReg(row)=targetReg(nElec);
-    relationTable.ampMI(row)=ampMI;
+    % relationTable.ampMI(row)=ampMI;
+    relationTable.angleCounts{row}=angleCounts;
+    relationTable.angleProbs{row}=angleProbs;
     relationTable.angleMI(row)=angleMI;
-    relationTable.ampPval(row)=ampPval;
-    relationTable.rsq(row)=rsq;
-    relationTable.slope(row)=coeff(2);
     relationTable.anglePval(row)=anglePval;
+    relationTable.ampPval(row)=ampPval;
+    relationTable.slope(row)=coeff(2);
+    relationTable.rsq(row)=rsq;
+
     relationTable.nAmpSpikesMax(row)=max(ampCounts);
     relationTable.nAngleSpikesMax(row)=max(angleCounts);
     relationTable.nHeatmapMax(row)=max(bincount_cells_xy{nElec},[],"all");
 
-    if max(ampCounts)>20 && max(angleCounts)>20 && max(bincount_cells_xy{nElec},[],"all")>6
+    % if max(ampCounts)>20 && max(angleCounts)>20 && max(bincount_cells_xy{nElec},[],"all")>6
         saveas(fAmp,fullfile(save_dir,"AmpMI "+sourceElec+"-"+targetElecs(nElec)+" FID "+fi+".png"),"png")
         saveas(fAngle,fullfile(save_dir,"AngleMI "+sourceElec+"-"+targetElecs(nElec)+" FID "+fi),"png")
-    end
+    % end
 
     row=row+1;
 end
@@ -284,13 +300,15 @@ maxHeightAll=max(cell2mat(maxHeightAll));
 row=1;
 
 for nElec=1:length(targetElecs)
-    if relationTable.nAmpSpikesMax(row)>20 && relationTable.nAngleSpikesMax(row)>20 && relationTable.nHeatmapMax(row)>6
+    % if relationTable.nAmpSpikesMax(row)>20 && relationTable.nAngleSpikesMax(row)>20 && relationTable.nHeatmapMax(row)>6
         myFig=figure('Name',targetElecs(nElec)+" heatmap",'NumberTitle','off','WindowState','fullscreen');
         myFig.Position(3)=679.2;
 
 
-        myCLim=[0,maxHeightAll];
-        imagesc(binxcenters{nElec},binycenters{nElec},flipud(rot90(bincount_cells_xy{nElec},1)),myCLim)
+        % myCLim=[0,maxHeightAll];
+        % myCLim=[0,Inf];
+        % imagesc(binxcenters{nElec},binycenters{nElec},flipud(rot90(bincount_cells_xy{nElec},1)),myCLim)
+        imagesc(binxcenters{nElec},binycenters{nElec},flipud(rot90(bincount_cells_xy{nElec},1)))
         ylim([min(binyedges{nElec}),max(binyedges{nElec})])
         xlim([-180,180])
 
@@ -307,8 +325,8 @@ for nElec=1:length(targetElecs)
 
         cb = colorbar("FontSize",40);
         colormap hot
-        cb.Limits=myCLim;
-        clim(myCLim)
+        % cb.Limits=myCLim;
+        % clim(myCLim)
         ylabel(cb,'#Spikes','FontSize',40,'Rotation',270)
         if maxHeightAll>=5
             cb.Ticks=round(linspace(0,maxHeightAll,5));
@@ -318,7 +336,7 @@ for nElec=1:length(targetElecs)
         axis square
 
         saveas(gcf,fullfile(save_dir,"HeatMap "+sourceElec+"-"+targetElecs(nElec)+" FID "+fi),"png")
-    end
+    % end
     row=row+1;
 end
 

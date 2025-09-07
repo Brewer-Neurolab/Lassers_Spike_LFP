@@ -1,4 +1,4 @@
-function [ coeff, stats, log_X, log_y ] = find_powerlawfit_using_linear_regression_coeff( X, y, xlim)
+function [ coeff, stats, log_X, log_y ] = powerlawfit_linear_regression_coeff( X, y, xlim)
 %Find linear regression coefficients between X and y in range [xlim(1),
 %xlim(2)]
 if ~exist('xlim','var')

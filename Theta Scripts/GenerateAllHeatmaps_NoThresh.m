@@ -12,7 +12,7 @@ axons_folders=string({axons_dir.name});
 axons_folders=axons_folders([axons_dir.isdir]);
 axons_folders=axons_folders(3:end);
 
-parent_wells_dir="D:\Brewer lab data\Slow Oscillation 4 Chamber 5 Tunnel Arrays\4x 210715 210806\1\Well Spikes";
+parent_wells_dir="D:\Brewer lab data\Slow Oscillation 4 Chamber 5 Tunnel Arrays\4x 210715 210806\1\Well Spikes 5SD Min";
 wells_dir=dir(parent_wells_dir);
 wells_folders=string({wells_dir.name});
 wells_folders=wells_folders([wells_dir.isdir]);
@@ -51,12 +51,15 @@ for fi=1:length(axon_spikes)
 end
 
 %3.5 SD
-well_spike_dyn=load("D:\Brewer lab data\Slow Oscillation 4 Chamber 5 Tunnel Arrays\4x 210715 210806\1\Well Spikes\well_spike_dynamics_table_hfs_3-5.mat");
+% well_spike_dyn=load("D:\Brewer lab data\Slow Oscillation 4 Chamber 5 Tunnel Arrays\4x 210715 210806\1\Well Spikes\well_spike_dynamics_table_hfs_3-5.mat");
 
 %5SD
-% well_spike_dyn=load("D:\Brewer lab data\Slow Oscillation 4 Chamber 5 Tunnel Arrays\4x 210715 210806\1\Well Spikes 5SD Min\well_spike_dynamics_table_hfs.mat")
+well_spike_dyn=load("D:\Brewer lab data\Slow Oscillation 4 Chamber 5 Tunnel Arrays\4x 210715 210806\1\Well Spikes 5SD Min\well_spike_dynamics_table_hfs.mat");
 
 well_spike_dyn=well_spike_dyn.well_spike_dynamics_table;
+
+all_reg=[interRegions,"EC-CA1"];
+
 %% Compute MI and heat maps
 clc
 
@@ -103,7 +106,7 @@ for nFF=1:height(ff_axon_tbl)
     sourceReg=ff_axon_tbl.Subregion(nFF);
     myTable=sourceLFP_targetSpike_relations_NoThresh(t,re_t,data,logicalValidLFPs,LFPEndPts,LFPAmplitude,LFPAngles,ff_axon_tbl.fi(nFF),ff_axon_tbl.Electrode(nFF),sourceReg,targetElecs,targetReg,well_spike_dyn,20,thresh_mult,...
         fullfile(parent_wells_dir,wells_folders(ff_axon_tbl.fi(nFF))+"\"),...
-        "C:\Users\lasss\Documents\Research\Brewer Lab work\Code\Lassers_Spike_LFP\Images\Theta\Spikes No Thresh Test LogLog");
+        "C:\Users\lasss\Documents\Research\Brewer Lab work\Code\Lassers_Spike_LFP\Images\Theta\Spikes No Thresh LogLog 5SD");
 
     if isempty(relationTable)
         relationTable=myTable;
@@ -119,18 +122,60 @@ end
 save(fullfile(saveDir,"relationTable_NoThresh"),"relationTable")
 %% Good Relationships
 
-%calculate false discovery rates for amp and angle
-[~,IAmp]=sort(relationTable.ampPval);
-[relationTable.ampFDR,relationTable.ampFDRh,largestAmpP]=myFalseDiscoveryRate(IAmp,length(IAmp),0.05,relationTable.ampPval);
+load(fullfile(saveDir,"relationTable_NoThresh"),"relationTable")
 
-[~,IAngle]=sort(relationTable.anglePval);
-[relationTable.angleFDR,relationTable.angleFDRh,largestAngleP]=myFalseDiscoveryRate(IAngle,length(IAngle),0.05,relationTable.anglePval);
+goodRelationsTbl=table();
+goodRelationsTblFDR=table();
+largestAngleP=[];
 
-goodRelationsTbl=relationTable((relationTable.ampPval<0.05 | relationTable.anglePval<0.05)...
-    & relationTable.nAmpSpikesMax>20 & relationTable.nAngleSpikesMax>20 & relationTable.nHeatmapMax>10,:);
-goodRelationsTblFDR=relationTable((relationTable.ampFDRh & relationTable.angleFDRh)...
-    & relationTable.nAmpSpikesMax>20 & relationTable.nAngleSpikesMax>20 & relationTable.nHeatmapMax>10,:);
+for i=1:length(all_reg)
+    %calculate false discovery rates for amp and angle
+    sub_tbl=relationTable(relationTable.sourceReg==all_reg(i),:);
+
+    % [~,IAmp]=sort(relationTable.ampPval);
+    % [sub_tbl.ampFDR,sub_tbl.ampFDRh,largestAmpP]=myFalseDiscoveryRate(IAmp,length(IAmp),0.05,sub_tbl.ampPval);
+
+    [~,IAngle]=sort(sub_tbl.anglePval);
+    [sub_tbl.angleFDR,sub_tbl.angleFDRh,largestAngleP(i)]=myFalseDiscoveryRate(IAngle,length(IAngle),0.05,sub_tbl.anglePval);
+
+    temp_tab1=sub_tbl((sub_tbl.ampPval<0.05 | sub_tbl.anglePval<0.05)...
+        & sub_tbl.nAmpSpikesMax>20 & sub_tbl.nAngleSpikesMax>20 & sub_tbl.nHeatmapMax>10,:);
+    goodRelationsTbl=[goodRelationsTbl;temp_tab1];
+
+    % temp_tab2=sub_tbl((sub_tbl.angleFDRh)...
+    %     & sub_tbl.nAmpSpikesMax>20 & sub_tbl.nAngleSpikesMax>20 & sub_tbl.nHeatmapMax>10,:);
+    temp_tab2=sub_tbl((sub_tbl.angleFDRh& sub_tbl.nAmpSpikesMax>20 & sub_tbl.nAngleSpikesMax>20),:);
+    goodRelationsTblFDR=[goodRelationsTblFDR;temp_tab2];
+end
 
 save(fullfile(saveDir,"goodRelationsTbl_NoThresh"),"goodRelationsTbl")
 save(fullfile(saveDir,"goodRelationsTblFDR_NoThresh"),"goodRelationsTblFDR")
 
+%% Avg Spike Angle By subregion
+close all
+
+% posGoodRel=goodRelationsTblFDR(goodRelationsTblFDR.slope>0,:);
+posGoodRel=goodRelationsTblFDR;
+
+% all_reg=[interRegions,"EC-CA1"];
+
+for i=1:length(all_reg)
+    figure
+    angleProbs=cell2mat(posGoodRel.angleProbs(posGoodRel.sourceReg==all_reg(i)));
+    meanAngleProbs=mean(angleProbs,1);
+    stdAngleProbs=std(angleProbs,[],1);
+    histogram("BinEdges",[-180:18:180],"BinCounts",meanAngleProbs)
+    hold on
+    errorbar(convert_edges_2_centers([-180:18:180]),meanAngleProbs,stdAngleProbs,"LineStyle","none","Color","k")
+    % title(all_reg(i))
+    xlabel("Angle")
+    ylabel("Spike Probability")
+    % ylim([0,max(meanAngleProbs+stdAngleProbs)*1.1])
+    ylim([0,0.2])
+    xlim([-180,180])
+    xticks(-180:36:180)
+    set(gca,"FontSize",18)
+    hold on
+    x=-180:180;
+    plot(-180:180,(sind(x)*0.1)+0.1,'r','LineWidth',2)
+end
