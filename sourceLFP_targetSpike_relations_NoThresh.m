@@ -41,7 +41,7 @@ xticks(angleEdges)
 set(gca,"YScale","log")
 
 title(tf,sourceElec+" axon distributions")
-
+bincount_cells_xy = {};
 nIter=100;
 for nElec=1:length(targetElecs)
     well_spikes=load(parent_dir+targetElecs(nElec)+"_spikes.mat");

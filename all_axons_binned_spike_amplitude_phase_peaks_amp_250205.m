@@ -105,7 +105,7 @@ for j=1:length(allregion_unit_matched_stim)
         if ~isempty(allregion_unit_matched_stim{j}.ff_cdt{i}) | ~isempty(allregion_unit_matched_stim{j}.fb_cdt{i})
 
             %load file from down samples
-            cd("C:\BrewerLabResearch\OneDrive_1_7-16-2025\downsampled tunnels\High_Gamma")
+            cd("C:\BrewerLabResearch\OneDrive_1_7-16-2025\downsampled tunnels\Low_Gamma")
             cd(folders(j))
 
             temp_dir= convertStringsToChars(matching_table{i,2});
@@ -148,7 +148,7 @@ for j=1:length(allregion_unit_matched_stim)
             %round spike data for 1000 hZ
             spike_data_rounded=round(spike_data,3);
 
-            for waves= 5%:length(LFPs)
+            for waves= 4%:length(LFPs)
 
                 LFP_tab=innit_tab;
 
@@ -281,7 +281,7 @@ toc
 % load("D:\Brewer lab data\Slow Oscillation 4 Chamber 5 Tunnel Arrays\4x 210715 210806\1\coherence\spike_amp_phase_struct.mat")
 %% by subregion plot of power distributuion PEAKS
 close all
-save_dir="C:\BrewerLabResearch\OneDrive_1_7-16-2025\coherence\spikecount_v_avgpower\tunnel\all\High_Gamma";
+save_dir="C:\BrewerLabResearch\OneDrive_1_7-16-2025\coherence\spikecount_v_avgpower\tunnel\all\Low_Gamma";
 
 binEdges=logspace(-1,4,16);
 binCenters=convert_edges_2_centers(binEdges);
@@ -293,8 +293,10 @@ pdf_table.Properties.VariableNames=["FID","Subregion","Channel","FrequencyBand",
 rng('default')
 
 allintegrals = [];
+allPDFVals = [];
 regionCounts = [];
 avgintegrals = zeros(1,length(subregions));
+steintegrals = zeros(1,length(subregions));
 % for direction=[0,1] %0 is feed back, 1 is feedforward
 for regi=1:length(subregions)
     f1=figure('units','normalized','outerposition',[0 0 1 1]);
@@ -305,7 +307,7 @@ for regi=1:length(subregions)
     numChans = 0;
     %%For each region of graph, find integral by doing:
     %%abs(bc2-bc1)*abs(Pval2-Pval1)/2 + abs(bc2-bc1) * min(Pval1, Pval2)
-    for freq_bands=5%:length(LFPs)
+    for freq_bands=4%:length(LFPs)
         chans_log=spike_amp_phase_struct.(LFPs{freq_bands}).Subregion==subregions(regi);
         chan_power=spike_amp_phase_struct.(LFPs{freq_bands})(chans_log,:);
         my_chans=chan_power(:,[1,3]);
@@ -329,12 +331,13 @@ for regi=1:length(subregions)
             hPDF=histogram(chan_power{chans,:},binEdges,'Normalization','probability');
             PDF_Vals=hPDF.Values;
             for li=1:length(PDF_Vals)
-                if (li ~= 1 && PDF_Vals(li) ~= PDF_Vals(li-1))
+                if (li~=1&&PDF_Vals(li)~=PDF_Vals(li-1))
                     currentInt=currentInt+(abs(binCenters(li+1)-binCenters(li))*(abs(PDF_Vals(li+1)-PDF_Vals(li))/2)) + (abs(binCenters(li+1)-binCenters(li)) * min(PDF_Vals(li), PDF_Vals(li+1)));
                 end
             end
             subintegrals(chans) = currentInt;
             numChans = numChans + 1;
+            allPDFVals = [allPDFVals; PDF_Vals];
             close gcf
             plot(ax2,binCenters,PDF_Vals,'LineWidth',3,'Color',my_colors(chans,:))
             % binned_power_mat=[binned_power_mat;h];
@@ -431,7 +434,7 @@ myThresh=[];
 powers=[];
 power_regions=[];
 
-for freq_bands=5%:length(LFPs)
+for freq_bands=4%:length(LFPs)
     ff_mean=[];
     ff_se=[];
     ff_mean_logweight=[];
@@ -496,38 +499,58 @@ errorbar(m(:,1),m(:,2),'LineStyle','none','Color','k')
 hold off
 
 % TODO need to put in loop later
-title("Average Amplitude (uV) Per Subregion")
-xlabel("Subregion")
-ylabel("Log Amplitude (uV)")
-set(gca,"FontSize",24)
-ylim([1,3])
+
 % axis square
 
 %% Histogram of log amplitude vs average amplitude of each subregion
-
-logAmps = log10(avgintegrals);
+logAmps = avgintegrals;
 allTracks = 1;
-hold on
+
+threshIndex = [0, 0, 0, 0, 0];
+for ti = 1:5
+    indexNum = 1;
+    for ii = 1:length(binCenters)
+        if (binCenters(ii) < myThresh(ti))
+            indexNum = indexNum + 1;
+        end
+    end
+    threshIndex(ti) = indexNum;
+end
+
 passNums = [];
 for hi = 1:5
     numPass = 0;
     for ai = 1:regionCounts(hi)
-        if (allintegrals(allTracks) >= myThresh(hi))
+        f = find(allPDFVals(allTracks, threshIndex(hi))) > 0;
+        if ~isempty(f)
             numPass = numPass + 1;
         end
         allTracks = allTracks + 1;
     end
     passNums = [passNums, numPass];
-    % %{text(x, y, labelText, ...
-    %     'HorizontalAlignment', 'center', ...
-    %     'VerticalAlignment', 'middle', ...
-    %     'Color', 'w', ...
-    %     'FontWeight', 'bold', ...
-    %     'Rotation', 90); 
-    % 
 end
 
-hold off
+allTracks = 1; 
+for hi = 1:5
+    amplitudes = logAmps(hi); 
+    stdDeviations(hi) = std(allintegrals(hi:hi+regionCounts(hi)-1)); 
+    sampleSizes(hi) = regionCounts(hi);         
+    avgAmplitudes(hi) = mean(allintegrals(hi:hi+regionCounts(hi)-1)); 
 
-histogram('Categories',logAmps,'BinCounts',5)
+    allTracks = allTracks + regionCounts(hi);
+end
+standardErrors = stdDeviations./sqrt(sampleSizes);
+
+figure
+hold on
+bar(subregions, logAmps);
+errorbar(logAmps,standardErrors,'LineStyle','none','Color','k');
 axis square;
+title("Average Amplitude (uV) Per Subregion")
+xlabel("Subregion")
+ylabel("Log Amplitude (uV)")
+set(gca,"FontSize",24)
+set(gca, 'YScale', 'log');     
+yticks([5 10 20 40 80]);       
+yticklabels({'5','10','20','40','80'}); 
+hold off
