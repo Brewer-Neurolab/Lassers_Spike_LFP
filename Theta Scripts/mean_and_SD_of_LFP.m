@@ -59,14 +59,13 @@ well_spike_dyn=load("D:\Brewer lab data\Slow Oscillation 4 Chamber 5 Tunnel Arra
 well_spike_dyn=well_spike_dyn.well_spike_dynamics_table;
 
 all_reg=[interRegions,"EC-CA1"];
-
-%% Compute MI and heat maps
+%% Compute Mean and SD tables
 clc
 
 %testing range
 testing_idx=[find(ff_axon_tbl.Subregion=="CA3-CA1")]';
 
-relationTable=[];
+lfpPropsTab=ff_axon_tbl;
 
 for nFF=1:height(ff_axon_tbl)
     data=load(fullfile(parent_axons_dir,axons_folders(ff_axon_tbl.fi(nFF)),ff_axon_tbl.Electrode(nFF)+".mat"));
@@ -97,85 +96,36 @@ for nFF=1:height(ff_axon_tbl)
         validLFPIndex=[validLFPIndex,LFPEndPts(nEndPts,1):LFPEndPts(nEndPts,2)];
     end
     logicalValidLFPs=zeros(1,length(re_t)); % uncomment for lower bound LFP
-    logicalValidLFPs=ones(1,length(re_t)); % considers all LFPs
-    % logicalValidLFPs(validLFPIndex)=1;
+    % logicalValidLFPs=ones(1,length(re_t)); % considers all LFPs
+    logicalValidLFPs(validLFPIndex)=1;
 
-    % Regression tests
-    targetElecs=well_spike_dyn.channel_name(well_spike_dyn.fi==ff_axon_tbl.fi(nFF) & well_spike_dyn.regi==ff_axon_tbl.subi(nFF));
-    targetReg=subregions(well_spike_dyn.regi(well_spike_dyn.fi==ff_axon_tbl.fi(nFF) & well_spike_dyn.regi==ff_axon_tbl.subi(nFF)));
-    sourceReg=ff_axon_tbl.Subregion(nFF);
-    myTable=sourceLFP_targetSpike_relations_NoThresh(t,re_t,data,logicalValidLFPs,LFPEndPts,LFPAmplitude,LFPAngles,ff_axon_tbl.fi(nFF),ff_axon_tbl.Electrode(nFF),sourceReg,targetElecs,targetReg,well_spike_dyn,20,thresh_mult,...
-        fullfile(parent_wells_dir,wells_folders(ff_axon_tbl.fi(nFF))+"\"),...
-        "C:\Users\lasss\Documents\Research\Brewer Lab work\Code\Lassers_Spike_LFP\Images\Theta\Spikes No Thresh LogLog 5SD");
-
-    if isempty(relationTable)
-        relationTable=myTable;
-    else
-        relationTable=[relationTable;myTable];
-    end
-
-    disp(nFF+" of "+height(ff_axon_tbl))
-
-    close all force
+    % propsTabVars=ff_axon_tbl.Variables
+    % lfpPropsTab(nFF,1:6)=ff_axon_tbl(nFF,:);
+    lfpPropsTab.RMS(nFF)=rms(data);
+    lfpPropsTab.MeanLFPAmp_uV(nFF)=mean(LFPAmplitude);
+    lfpPropsTab.LFPAmp_SD(nFF)=std(LFPAmplitude);
+    lfpPropsTab.("perc_above_mean+sd")(nFF)=(sum(logicalValidLFPs)/length(logicalValidLFPs))*100;
+    lfpPropsTab.perc_above_5uV(nFF)=(sum(LFPAmplitude>=5)/length(LFPAmplitude))*100;
 end
 
-save(fullfile(saveDir,"relationTable_NoThresh"),"relationTable")
-%% Good Relationships
+writetable(lfpPropsTab,fullfile("C:\Users\lasss\Documents\Research\Brewer Lab work\Code\Lassers_Spike_LFP\Theta Scripts","lfpPropsTab.xlsx"))
 
-load(fullfile(saveDir,"relationTable_NoThresh"),"relationTable")
+%% Plot by subregion
 
-goodRelationsTbl=table();
-goodRelationsTblFDR=table();
-largestAngleP=[];
+% subreg_mean=[];
+% subreg_meanSD=[];
+% subreg_SD=[];
+lfp_stats_tbl=table();
 
 for i=1:length(all_reg)
-    %calculate false discovery rates for amp and angle
-    sub_tbl=relationTable(relationTable.sourceReg==all_reg(i),:);
-
-    % [~,IAmp]=sort(relationTable.ampPval);
-    % [sub_tbl.ampFDR,sub_tbl.ampFDRh,largestAmpP]=myFalseDiscoveryRate(IAmp,length(IAmp),0.05,sub_tbl.ampPval);
-
-    [~,IAngle]=sort(sub_tbl.anglePval);
-    [sub_tbl.angleFDR,sub_tbl.angleFDRh,largestAngleP(i)]=myFalseDiscoveryRate(IAngle,length(IAngle),0.05,sub_tbl.anglePval);
-
-    temp_tab1=sub_tbl((sub_tbl.ampPval<0.05 | sub_tbl.anglePval<0.05)...
-        & sub_tbl.nAmpSpikesMax>20 & sub_tbl.nAngleSpikesMax>20 & sub_tbl.nHeatmapMax>10,:);
-    goodRelationsTbl=[goodRelationsTbl;temp_tab1];
-
-    % temp_tab2=sub_tbl((sub_tbl.angleFDRh)...
-    %     & sub_tbl.nAmpSpikesMax>20 & sub_tbl.nAngleSpikesMax>20 & sub_tbl.nHeatmapMax>10,:);
-    temp_tab2=sub_tbl((sub_tbl.angleFDRh& sub_tbl.nAmpSpikesMax>20 & sub_tbl.nAngleSpikesMax>20),:);
-    goodRelationsTblFDR=[goodRelationsTblFDR;temp_tab2];
+    lfp_stats_tbl.subregion(i)=all_reg(i);
+    lfp_stats_tbl.subreg_mean(i)=mean(lfpPropsTab.MeanLFPAmp_uV(lfpPropsTab.Subregion==all_reg(i)));
+    lfp_stats_tbl.subreg_meanSD(i)=mean(lfpPropsTab.LFPAmp_SD(lfpPropsTab.Subregion==all_reg(i)));
+    lfp_stats_tbl.subreg_SD(i)=std(lfpPropsTab.MeanLFPAmp_uV(lfpPropsTab.Subregion==all_reg(i)));
+    lfp_stats_tbl.mean_rms(i)=mean(lfpPropsTab.RMS(lfpPropsTab.Subregion==all_reg(i)));
 end
 
-save(fullfile(saveDir,"goodRelationsTbl_NoThresh"),"goodRelationsTbl")
-save(fullfile(saveDir,"goodRelationsTblFDR_NoThresh"),"goodRelationsTblFDR")
+writetable(lfp_stats_tbl,fullfile("C:\Users\lasss\Documents\Research\Brewer Lab work\Code\Lassers_Spike_LFP\Theta Scripts","lfpStatsTab.xlsx"))
 
-%% Avg Spike Angle By subregion
-close all
+%% Has target?
 
-% posGoodRel=goodRelationsTblFDR(goodRelationsTblFDR.slope>0,:);
-posGoodRel=goodRelationsTblFDR;
-
-% all_reg=[interRegions,"EC-CA1"];
-
-for i=1:length(all_reg)
-    figure
-    angleProbs=cell2mat(posGoodRel.angleProbs(posGoodRel.sourceReg==all_reg(i)));
-    meanAngleProbs=mean(angleProbs,1);
-    stdAngleProbs=std(angleProbs,[],1);
-    histogram("BinEdges",[-180:18:180],"BinCounts",meanAngleProbs)
-    hold on
-    errorbar(convert_edges_2_centers([-180:18:180]),meanAngleProbs,stdAngleProbs,"LineStyle","none","Color","k")
-    % title(all_reg(i))
-    xlabel("Angle")
-    ylabel("Spike Probability")
-    % ylim([0,max(meanAngleProbs+stdAngleProbs)*1.1])
-    ylim([0,0.2])
-    xlim([-180,180])
-    xticks(-180:36:180)
-    set(gca,"FontSize",18)
-    hold on
-    x=-180:180;
-    plot(-180:180,(sind(x)*0.1)+0.1,'r','LineWidth',2)
-end

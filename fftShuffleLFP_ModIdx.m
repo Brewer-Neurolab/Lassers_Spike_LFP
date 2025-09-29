@@ -49,7 +49,7 @@ for myIter=1:nIter
         if hilbertDim=="amp"
             randData=[randData,abs(hilbert(f_rotate))];
         elseif hilbertDim=="angle"
-            randData=[randData,wrapTo360(rad2deg(angle(hilbert(f_rotate))))];
+            randData=[randData,wrapTo180(rad2deg(angle(hilbert(f_rotate))))];
         else
             randData=[randData,f_rotate];
         end

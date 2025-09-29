@@ -30,6 +30,9 @@ for nConnect=1:height(glmTbl)%find(table2array(glmTblAll(:,[1,2,3]))==table2arra
     colorVar(nConnect)=string(glmTbl.fi(nConnect))+glmTbl.source_elec(nConnect);
 end
 
+disp(subregion)
+disp(xlog10'+" "+ylog10')
+
 unique_sources=unique(colorVar);
 unique_colors=distinguishable_colors(numel(unique_sources));
 cVec=[];
@@ -42,7 +45,7 @@ hold on
 for nAxons=1:length(unique_sources)
     % scatter(amp(colorVar==unique_sources(nAxons)),interaction(colorVar==unique_sources(nAxons)),20,cVec(colorVar==unique_sources(nAxons)),'filled')
     thisColor=cVec(colorVar==unique_sources(nAxons),:);
-    scatter(xlog10(colorVar==unique_sources(nAxons)),ylog10(colorVar==unique_sources(nAxons)),40,"MarkerEdgeColor",thisColor(1,:),"LineWidth",1.5)
+    scatter(xlog10(colorVar==unique_sources(nAxons)),ylog10(colorVar==unique_sources(nAxons)),40,"MarkerEdgeColor",thisColor(1,:),"LineWidth",3)
     % scatter(x(colorVar==unique_sources(nAxons)),y(colorVar==unique_sources(nAxons)),40,"MarkerEdgeColor",thisColor(1,:),"LineWidth",1.5)
 end
 
@@ -75,8 +78,8 @@ xticklabels("10^{"+[-10:10]+"}")
 
 BonferroniP=alpha/height(glmTbl);
 
-xline(-log10(BonferroniP))
-yline(-log10(BonferroniP))
+xline(-log10(BonferroniP),"LineWidth",1)
+yline(-log10(BonferroniP),"LineWidth",1)
 
 legend([unique_sources,'',''],'Location','eastoutside')
 % ax.tick
@@ -92,8 +95,6 @@ ax.LineWidth=2;
 ax.TickLength=[0.05,0.05];
 
 axis square
-
-
 
 % Debug routine
 % figure

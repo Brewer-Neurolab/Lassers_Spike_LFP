@@ -4,6 +4,10 @@ imq=(rank./nTests).*alpha;
 
 largestSignificantP=max(pval(pval<imq));
 
+if largestSignificantP==0
+    largestSignificantP=alpha;
+end
+
 if isempty(largestSignificantP)
     largestSignificantP=-1;
 end

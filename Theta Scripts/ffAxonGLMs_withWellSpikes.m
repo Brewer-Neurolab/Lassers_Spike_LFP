@@ -11,7 +11,7 @@ axons_folders=string({axons_dir.name});
 axons_folders=axons_folders([axons_dir.isdir]);
 axons_folders=axons_folders(3:end);
 
-parent_wells_dir="D:\Brewer lab data\Slow Oscillation 4 Chamber 5 Tunnel Arrays\4x 210715 210806\1\Well Spikes";
+parent_wells_dir="D:\Brewer lab data\Slow Oscillation 4 Chamber 5 Tunnel Arrays\4x 210715 210806\1\Well Spikes 5SD Min";
 wells_dir=dir(parent_wells_dir);
 wells_folders=string({wells_dir.name});
 wells_folders=wells_folders([wells_dir.isdir]);
@@ -27,7 +27,7 @@ ff_axon_tbl=table();
 row=1;
 for fi=1:length(axon_spikes)
     for nelec=1:height(axon_spikes{fi})
-        if ~isempty(axon_spikes{fi}.up_ff{nelec})
+        if ~isempty(axon_spikes{fi}.up_ff{nelec}) | (~isempty(axon_spikes{fi}.up_fb{nelec}) & axon_spikes{fi}.Subregion(nelec)=="CA1-EC")
             ff_axon_tbl.fi(row)=fi;
             ff_axon_tbl.Subregion(row)=axon_spikes{fi}.Subregion(nelec);
             ff_axon_tbl.interRegi(row)=find(interRegions==axon_spikes{fi}.Subregion(nelec));
@@ -37,18 +37,27 @@ for fi=1:length(axon_spikes)
             tunnelReg=split(axon_spikes{fi}.Subregion(nelec),{'-'});
             ff_axon_tbl.FFReg(row)=tunnelReg(2);
             ff_axon_tbl.subi(row)=find(subregions==tunnelReg(2));
+
+            if isempty(axon_spikes{fi}.up_ff{nelec}) & ~isempty(axon_spikes{fi}.up_fb{nelec}) & axon_spikes{fi}.Subregion(nelec)=="CA1-EC"
+                ff_axon_tbl.Subregion(row)="EC-CA1";
+                ff_axon_tbl.FFReg(row)="CA1";
+                ff_axon_tbl.subi(row)=4;
+            end
+
             row=row+1;
         end
     end
 end
 
 %3.5 SD
-well_spike_dyn=load("D:\Brewer lab data\Slow Oscillation 4 Chamber 5 Tunnel Arrays\4x 210715 210806\1\Well Spikes\well_spike_dynamics_table_hfs_3-5.mat");
+% well_spike_dyn=load("D:\Brewer lab data\Slow Oscillation 4 Chamber 5 Tunnel Arrays\4x 210715 210806\1\Well Spikes\well_spike_dynamics_table_hfs_3-5.mat");
 
 %5SD
-% well_spike_dyn=load("D:\Brewer lab data\Slow Oscillation 4 Chamber 5 Tunnel Arrays\4x 210715 210806\1\Well Spikes 5SD Min\well_spike_dynamics_table_hfs.mat")
+well_spike_dyn=load("D:\Brewer lab data\Slow Oscillation 4 Chamber 5 Tunnel Arrays\4x 210715 210806\1\Well Spikes 5SD Min\well_spike_dynamics_table_hfs.mat");
 
 well_spike_dyn=well_spike_dyn.well_spike_dynamics_table;
+
+all_reg=[interRegions,"EC-CA1"];
 %% Compute GLM
 
 clc
@@ -241,39 +250,45 @@ for nConnect=1:height(glmTblAll)
     glmTblAll.mdl{nConnect}=rmfield(lowInfoGLM,toRemove);
 end
 
+%% Count significant by subregion
+for subi=1:length(all_reg)
+    subTbl=glmTblAll(glmTblAll.source_reg==all_reg(subi),:);
+    BonferroniP=0.05/height(subTbl);
+    disp("#significant "+all_reg(subi)+"="+sum(subTbl.mdlPVal<BonferroniP)+"/"+height(subTbl))
+end
 %% Amp V Mdl by subregion
 
-for subi=1:length(interRegions)
-    glmScatter(glmTblAll,"mdl",2,interRegions(subi),0.05)
+for subi=1:length(all_reg)
+    glmScatter(glmTblAll,"mdl",2,all_reg(subi),0.05)
 end
 
 %% CosAngle V Mdl by subregion
 
-for subi=1:length(interRegions)
-    glmScatter(glmTblAll,"mdl",3,interRegions(subi),0.05)
+for subi=1:length(all_reg)
+    glmScatter(glmTblAll,"mdl",3,all_reg(subi),0.05)
 end
 %% CosAngle V SinAngle by subregion
 
-for subi=1:length(interRegions)
-    glmScatter(glmTblAll,4,5,interRegions(subi),0.05)
+for subi=1:length(all_reg)
+    glmScatter(glmTblAll,4,5,all_reg(subi),0.05)
 end
 %% Angle V Mdl by subregion
 
-for subi=1:length(interRegions)
-    glmScatter(glmTblAll,"mdl",3,interRegions(subi),0.05)
+for subi=1:length(all_reg)
+    glmScatter(glmTblAll,"mdl",3,all_reg(subi),0.05)
 end
 %% Cos Angle V Amp by subregion
 
-for subi=1:length(interRegions)
-    glmScatter(glmTblAll,2,3,interRegions(subi),0.05)
+for subi=1:length(all_reg)
+    glmScatter(glmTblAll,2,3,all_reg(subi),0.05)
 end
 %% Angle V Amp by subregion
 
-for subi=1:length(interRegions)
-    glmScatter(glmTblAll,2,3,interRegions(subi),0.05)
+for subi=1:length(all_reg)
+    glmScatter(glmTblAll,2,3,all_reg(subi),0.05)
 end
 %% Amp:CosAngle V Mld by subregion
 
-for subi=1:length(interRegions)
-    glmScatter(glmTblAll,"mdl",4,interRegions(subi),0.05)
+for subi=1:length(all_reg)
+    glmScatter(glmTblAll,"mdl",4,all_reg(subi),0.05)
 end
