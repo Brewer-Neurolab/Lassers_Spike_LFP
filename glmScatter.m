@@ -45,7 +45,7 @@ hold on
 for nAxons=1:length(unique_sources)
     % scatter(amp(colorVar==unique_sources(nAxons)),interaction(colorVar==unique_sources(nAxons)),20,cVec(colorVar==unique_sources(nAxons)),'filled')
     thisColor=cVec(colorVar==unique_sources(nAxons),:);
-    scatter(xlog10(colorVar==unique_sources(nAxons)),ylog10(colorVar==unique_sources(nAxons)),40,"MarkerEdgeColor",thisColor(1,:),"LineWidth",1.5)
+    scatter(xlog10(colorVar==unique_sources(nAxons)),ylog10(colorVar==unique_sources(nAxons)),40,"MarkerEdgeColor",thisColor(1,:),"LineWidth",3)
     % scatter(x(colorVar==unique_sources(nAxons)),y(colorVar==unique_sources(nAxons)),40,"MarkerEdgeColor",thisColor(1,:),"LineWidth",1.5)
 end
 
@@ -78,8 +78,8 @@ xticklabels("10^{"+[-10:10]+"}")
 
 BonferroniP=alpha/height(glmTbl);
 
-xline(-log10(BonferroniP))
-yline(-log10(BonferroniP))
+xline(-log10(BonferroniP),"LineWidth",1)
+yline(-log10(BonferroniP),"LineWidth",1)
 
 legend([unique_sources,'',''],'Location','eastoutside')
 % ax.tick
