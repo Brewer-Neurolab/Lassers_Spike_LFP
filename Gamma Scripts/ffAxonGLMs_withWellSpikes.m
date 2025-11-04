@@ -188,17 +188,26 @@ for nFF=1:height(ff_axon_tbl)%[95,96,117]
         spike_train(spike_idx)=1;
         spike_train(~logicalValidLFPs)=[];
 
-        glmTbl.WellSpikes=logical(spike_train');
+        
         % glmTbl.ThetaAmp=ThetaAmp';
-        glmTbl.HighGammaAmp=zscore(HighGammaAmp'); %toggle to zscore
         % glmTbl.ThetaAngle=discretize(ThetaAngle',angle_edges,angle_edges(2:end));
         % glmTbl.ThetaAngle=ThetaAngle';
         % glmTbl.SinThetaAngle=sin(glmTbl.ThetaAngle);
         % glmTbl.CosThetaAngle=cos(glmTbl.ThetaAngle);
+        
+        %High Gamma
+        % glmTbl.WellSpikes=logical(spike_train');
+        % glmTbl.HighGammaAmp=zscore(HighGammaAmp'); %toggle to zscore
+        % glmTbl.HighGammaAngle=zscore(HighGammaAngle'); %toggle to zscore
+        % glmTbl.SinHighGammaAngle=zscore(sin(glmTbl.HighGammaAngle)); %toggle to zscore
+        % glmTbl.CosHighGammaAngle=zscore(cos(glmTbl.HighGammaAngle)); %toggle to zscore
 
-        glmTbl.HighGammaAngle=zscore(HighGammaAngle'); %toggle to zscore
-        glmTbl.SinHighGammaAngle=zscore(sin(glmTbl.HighGammaAngle)); %toggle to zscore
-        glmTbl.CosHighGammaAngle=zscore(cos(glmTbl.HighGammaAngle)); %toggle to zscore
+        %Low Gamma
+        glmTbl.WellSpikes=logical(spike_train');
+        glmTbl.LowGammaAmp=zscore(LowGammaAmp'); %toggle to zscore
+        glmTbl.LowGammaAngle=zscore(LowGammaAngle'); %toggle to zscore
+        glmTbl.SinLowGammaAngle=zscore(sin(glmTbl.LowGammaAngle)); %toggle to zscore
+        glmTbl.CosLowGammaAngle=zscore(cos(glmTbl.LowGammaAngle)); %toggle to zscore
         
         % glmTbl.DeltaAmp=DeltaAmp';
         % glmTbl.DeltaAngle=discretize(resample(DeltaAngle',re_fs,fs),angle_edges,diff(angle_edges));
@@ -216,8 +225,13 @@ for nFF=1:height(ff_axon_tbl)%[95,96,117]
         %     'ThetaAmp*ThetaAngle'];
         % modelspec=['WellSpikes ~ ThetaAmp + ThetaAngle + DeltaAmp + DeltaAngle + '...
         %     'ThetaAmp*ThetaAngle*DeltaAmp*DeltaAngle'];
-        % modelspec='WellSpikes ~ ThetaAmp*(ThetaAngle+SinThetaAngle+CosThetaAngle)';
-        modelspec='WellSpikes ~ HighGammaAmp*(CosHighGammaAngle)'; %refined from all three angle variations
+        
+        %modelspec='WellSpikes ~ HighGammaAmp*(HighGammaAngle+SinHighGammaAngle+CosHighGammaAngle)';
+        modelspec='WellSpikes ~ LowGammaAmp*(LowGammaAngle+SinLowGammaAngle+CosLowGammaAngle)';
+
+        %modelspec='WellSpikes ~ HighGammaAmp*(CosHighGammaAngle)'; %refined from all three angle variations
+        %modelspec='WellSpikes ~ LowGammaAmp*(CosLowGammaAngle)'; %refined from all three angle variations
+
         % modelspec='WellSpikes ~ ThetaAmp:ThetaAngle';
         % modelspec=['WellSpikes ~ ThetaAmp*ThetaAngle*SinThetaAngle*CosThetaAngle' ...
         %     '*DeltaAmp*DeltaAngle*SinDeltaAngle*CosDeltaAngle'];
