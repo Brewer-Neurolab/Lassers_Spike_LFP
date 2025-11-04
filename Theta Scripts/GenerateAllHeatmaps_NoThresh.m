@@ -106,7 +106,7 @@ for nFF=1:height(ff_axon_tbl)
     sourceReg=ff_axon_tbl.Subregion(nFF);
     myTable=sourceLFP_targetSpike_relations_NoThresh(t,re_t,data,logicalValidLFPs,LFPEndPts,LFPAmplitude,LFPAngles,ff_axon_tbl.fi(nFF),ff_axon_tbl.Electrode(nFF),sourceReg,targetElecs,targetReg,well_spike_dyn,20,thresh_mult,...
         fullfile(parent_wells_dir,wells_folders(ff_axon_tbl.fi(nFF))+"\"),...
-        "C:\Users\lasss\Documents\Research\Brewer Lab work\Code\Lassers_Spike_LFP\Images\Theta\Spikes No Thresh LogLog 5SD");
+        "C:\Users\lasss\Documents\Research\Brewer Lab work\Code\Lassers_Spike_LFP\Images\Theta\Spikes No Thresh LogLog 5SD 1000 iter");
 
     if isempty(relationTable)
         relationTable=myTable;

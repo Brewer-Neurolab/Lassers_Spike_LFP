@@ -46,8 +46,14 @@ set(gca,"YScale","log")
 
 title(tf,sourceElec+" axon distributions")
 
+
 bincount_cells_xy = {};
 nIter=100;
+
+bincount_cells_xy={};
+
+nIter=1000;
+
 for nElec=1:length(targetElecs)
     well_spikes=load(parent_dir+targetElecs(nElec)+"_spikes.mat");
     well_spikes=well_spikes.index/1000; % in seconds
@@ -163,7 +169,6 @@ for nElec=1:length(targetElecs)
     % axis square
     pbaspect([2,1,1])
     
-
     ax=fAmp_axis;
     ax.LineWidth=4;
     ax.TickLength=[0.01 0.05];
@@ -306,7 +311,6 @@ for nElec=1:length(targetElecs)
         myFig=figure('Name',targetElecs(nElec)+" heatmap",'NumberTitle','off','WindowState','fullscreen');
         myFig.Position(3)=679.2;
 
-
         % myCLim=[0,maxHeightAll];
         % myCLim=[0,Inf];
         % imagesc(binxcenters{nElec},binycenters{nElec},flipud(rot90(bincount_cells_xy{nElec},1)),myCLim)
@@ -320,8 +324,15 @@ for nElec=1:length(targetElecs)
         set(gca,"FontSize",50)
 
         xticks([-180,-90,0,90,180])
+
         yticks([2,5,10,20,50,100,200,500,1000,5000])
         yticklabels([2,5,10,20,50,100,200,500,1000,5000])
+
+        % yticks(binyedges{nElec}(1:4:end))
+        % yticklabels(round(binyedges{nElec}(1:4:end),2,"significant"))
+        yticks([5,10,20,50,100,200,500,1000,5000])
+        yticklabels([5,10,20,50,100,200,500,1000,5000])
+
         set(gca,'YDir','normal')
         set(gca,"YScale","log")
 

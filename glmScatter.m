@@ -30,6 +30,9 @@ for nConnect=1:height(glmTbl)%find(table2array(glmTblAll(:,[1,2,3]))==table2arra
     colorVar(nConnect)=string(glmTbl.fi(nConnect))+glmTbl.source_elec(nConnect);
 end
 
+% Add 5% jitter
+[xlog10,ylog10]=add_lin_jitter(xlog10,ylog10,0.25);
+
 disp(subregion)
 disp(xlog10'+" "+ylog10')
 
@@ -45,7 +48,7 @@ hold on
 for nAxons=1:length(unique_sources)
     % scatter(amp(colorVar==unique_sources(nAxons)),interaction(colorVar==unique_sources(nAxons)),20,cVec(colorVar==unique_sources(nAxons)),'filled')
     thisColor=cVec(colorVar==unique_sources(nAxons),:);
-    scatter(xlog10(colorVar==unique_sources(nAxons)),ylog10(colorVar==unique_sources(nAxons)),40,"MarkerEdgeColor",thisColor(1,:),"LineWidth",3)
+    scatter(xlog10(colorVar==unique_sources(nAxons)),ylog10(colorVar==unique_sources(nAxons)),200,"MarkerEdgeColor",thisColor(1,:),"LineWidth",3)
     % scatter(x(colorVar==unique_sources(nAxons)),y(colorVar==unique_sources(nAxons)),40,"MarkerEdgeColor",thisColor(1,:),"LineWidth",1.5)
 end
 
@@ -53,14 +56,14 @@ hold off
 
 if isstring(glmx)
     if glmx=="mdl"
-        xlabel("-log10 p model")
+        xlabel("-log10 p spiking model")
     end
 else
     xlabel("-log10 p "+coeff_rowNames(glmx))
 end
 if isstring(glmy)
     if glmy=="mdl"
-        ylabel("-log10 p model")
+        ylabel("-log10 p spiking model")
     end
 else
     ylabel("-log10 p "+coeff_rowNames(glmy))
@@ -81,20 +84,42 @@ BonferroniP=alpha/height(glmTbl);
 xline(-log10(BonferroniP),"LineWidth",1)
 yline(-log10(BonferroniP),"LineWidth",1)
 
-legend([unique_sources,'',''],'Location','eastoutside')
+legend([unique_sources,'',''],'Location','northwest')
 % ax.tick
 % end
 % hold off
 nsig=sum(xlog10>-log10(BonferroniP) & ylog10>-log10(BonferroniP));
 % nsig=sum(x<BonferroniP & y<BonferroniP);
 
-title(subregion+" #Significant Connections: "+nsig+"/"+height(glmTbl))
+% title(subregion+" #Significant Connections: "+nsig+"/"+height(glmTbl))
+disp(subregion+" #Significant Connections: "+nsig+"/"+height(glmTbl))
 set(gca,"FontSize",32)
 
 ax.LineWidth=2;
 ax.TickLength=[0.05,0.05];
 
 axis square
+
+xlim([min(xlog10)*0.1,max(xlog10)*10])
+ylim([min(ylog10)*0.1,max(ylog10)*10])
+
+if min(xlim)>0.01
+    xlim([0.01,max(xlog10)*10])
+end
+
+if max(xlim)<100
+    currentXlim=xlim;
+    xlim([currentXlim(1),100])
+end
+
+if min(ylim)>0.01
+    ylim([0.01,max(xlog10)*10])
+end
+
+if max(ylim)<100
+    currentYlim=ylim;
+    ylim([currentYlim(1),100])
+end
 
 % Debug routine
 % figure
