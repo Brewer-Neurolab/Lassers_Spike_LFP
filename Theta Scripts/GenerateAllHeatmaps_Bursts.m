@@ -86,8 +86,9 @@ for nFF=30%1:height(ff_axon_tbl)
     for nEndPts=1:size(LFPEndPts,1)
         validLFPIndex=[validLFPIndex,LFPEndPts(nEndPts,1):LFPEndPts(nEndPts,2)];
     end
-    logicalValidLFPs=zeros(1,length(re_t));
-    logicalValidLFPs(validLFPIndex)=1;
+     logicalValidLFPs=zeros(1,length(re_t)); % uncomment for lower bound LFP
+    logicalValidLFPs=ones(1,length(re_t)); % considers all LFPs
+    % logicalValidLFPs(validLFPIndex)=1;
 
     % Regression tests
     targetElecs=well_spike_dyn.channel_name(well_spike_dyn.fi==ff_axon_tbl.fi(nFF) & well_spike_dyn.regi==ff_axon_tbl.subi(nFF));

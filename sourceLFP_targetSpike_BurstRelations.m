@@ -3,7 +3,8 @@ function relationTable=sourceLFP_targetSpike_BurstRelations(t,re_t,myData,logica
 relationTable=table();
 row=1;
 
-thetaAmpThresh=std(LFPAmplitude)*thresh_mult;
+% thetaAmpThresh=std(LFPAmplitude)*thresh_mult;
+thetaAmpThresh=5;
 ampEdges=logspace(log10(thetaAmpThresh),log10(max(LFPAmplitude)),nYbin+1);
 ampCenters=convert_edges_2_centers(log10(ampEdges));
 ampCenters=10.^ampCenters;
@@ -242,7 +243,7 @@ for nElec=1:length(targetElecs)
         colormap hot
         cb.Limits=myCLim;
         clim(myCLim)
-        ylabel(cb,'#BurstTimes','FontSize',40,'Rotation',270)
+        ylabel(cb,'Burst ms','FontSize',40,'Rotation',270)
         if maxHeightAll>=5
             cb.Ticks=round(linspace(0,maxHeightAll,5));
         end
