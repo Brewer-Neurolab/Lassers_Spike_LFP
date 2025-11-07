@@ -5,21 +5,21 @@ clear
 clc
 close all
 
-saveDir="C:\Users\lasss\Documents\Research\Brewer Lab work\Code\Lassers_Spike_LFP\Theta Scripts";
+saveDir="C:\BrewerLabResearch\GitHub\Lassers_Spike_LFP\Gamma Scripts";
 
-parent_axons_dir="D:\Brewer lab data\Slow Oscillation 4 Chamber 5 Tunnel Arrays\4x 210715 210806\1\downsampled tunnels\theta";
+parent_axons_dir="C:\BrewerLabResearch\OneDrive_1_7-16-2025\downsampled tunnels\Low_Gamma";
 axons_dir=dir(parent_axons_dir);
 axons_folders=string({axons_dir.name});
 axons_folders=axons_folders([axons_dir.isdir]);
 axons_folders=axons_folders(3:end);
 
-parent_wells_dir="D:\Brewer lab data\Slow Oscillation 4 Chamber 5 Tunnel Arrays\4x 210715 210806\1\Well Spikes 5SD Min";
+parent_wells_dir="C:\BrewerLabResearch\OneDrive_1_7-16-2025\Well Spikes 5SD Min";
 wells_dir=dir(parent_wells_dir);
 wells_folders=string({wells_dir.name});
 wells_folders=wells_folders([wells_dir.isdir]);
 wells_folders=wells_folders(3:end);
 
-axon_spikes=load("D:\Brewer lab data\Slow Oscillation 4 Chamber 5 Tunnel Arrays\4x 210715 210806\1\18-Apr-2023_A\allregion_unit_matched_cleaned.mat");
+axon_spikes=load("C:\BrewerLabResearch\OneDrive_1_7-16-2025\18-Apr-2023_A\allregion_unit_matched_cleaned.mat");
 axon_spikes=axon_spikes.allregion_unit_matched_stim;
 
 interRegions=["EC-DG","DG-CA3","CA3-CA1","CA1-EC","EC-CA3"];
@@ -56,7 +56,7 @@ end
 % well_spike_dyn=load("D:\Brewer lab data\Slow Oscillation 4 Chamber 5 Tunnel Arrays\4x 210715 210806\1\Well Spikes\well_spike_dynamics_table_hfs_3-5.mat");
 
 %5SD
-well_spike_dyn=load("D:\Brewer lab data\Slow Oscillation 4 Chamber 5 Tunnel Arrays\4x 210715 210806\1\Well Spikes 5SD Min\well_spike_dynamics_table_hfs.mat");
+well_spike_dyn=load("C:\BrewerLabResearch\OneDrive_1_7-16-2025\Well Spikes 5SD Min\well_spike_dynamics_table_hfs.mat");
 
 well_spike_dyn=well_spike_dyn.well_spike_dynamics_table;
 
@@ -68,7 +68,7 @@ all_reg=[interRegions];
 clc
 
 %testing range
-testing_idx=[find(ff_axon_tbl.Subregion=="CA3-CA1")]';
+testing_idx=[find(ff_axon_tbl.Subregion=="DG-CA3")]';
 
 LFPTable=ff_axon_tbl;
 
@@ -86,12 +86,12 @@ for nFF=1:height(ff_axon_tbl)
     thresh_mult=1;
 
     %define max number of samples for combining LFPs
-    nsamples_combine_thresh=(1/10)*re_fs*3;
+    nsamples_combine_thresh=(1/100)*re_fs*3;
     % nsamples_combine_thresh=[];
 
     %define min lfp length as 2x shortest theta cycle
     minLFPCycles=2; %default 2
-    minLFPLength=(1/10)*minLFPCycles*re_fs;
+    minLFPLength=(1/100)*minLFPCycles*re_fs;
 
     [LFPEndPts,LFPAmplitude,LFPHilbert]=identify_lfps(data,re_fs,t_rec,thresh_mult,minLFPLength,minLFPCycles,nsamples_combine_thresh);
     LFPAngles=wrapTo360(angle(LFPHilbert)*(180/pi));
@@ -159,7 +159,7 @@ for i=1:length(all_reg)
     v=exp(2*mu+sigma^2)*(exp(sigma^2)-1);
 
     xline(ax1,m+2*v)
-    legend(ax1,axonNames)
+    legend(ax1,axonNames, 'Location', 'eastoutside')
     xline(ax2,m+2*v)
 
     last_bin=find(binEdges>m+2*v);
@@ -192,7 +192,7 @@ for i=1:length(all_reg)
     xticklabels("10^{"+[-3:4]+"}")
     % ylim([0,10^3])
     axis square
-    l=legend(ax3,[axonNames,"Gauss Fit"]);
+    l=legend(ax3,[axonNames,"Gauss Fit"], 'Location', 'eastoutside');
     l.AutoUpdate="off";
     xline(ax3,m+2*v,'LineWidth',4,'Color','k','LineStyle','--')
     % title(ax3,all_reg(i)+" "+sum(any(ampPts(:,last_bin:end),2))+"/"+size(ampPts,1))
