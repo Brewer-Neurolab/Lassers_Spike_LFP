@@ -68,7 +68,7 @@ testing_idx=[find(ff_axon_tbl.Subregion=="CA3-CA1")]';
 
 relationTable=[];
 
-for nFF=1:height(ff_axon_tbl)
+for nFF=27%1:height(ff_axon_tbl)
     data=load(fullfile(parent_axons_dir,axons_folders(ff_axon_tbl.fi(nFF)),ff_axon_tbl.Electrode(nFF)+".mat"));
     % re_fs=data.re_fs;
     re_fs=1000;
@@ -154,6 +154,9 @@ save(fullfile(saveDir,"goodRelationsTblFDR_NoThresh"),"goodRelationsTblFDR")
 %% Avg Spike Angle By subregion
 close all
 
+load(fullfile(saveDir,"goodRelationsTbl_NoThresh"))
+load(fullfile(saveDir,"goodRelationsTblFDR_NoThresh"))
+
 % posGoodRel=goodRelationsTblFDR(goodRelationsTblFDR.slope>0,:);
 posGoodRel=goodRelationsTblFDR;
 
@@ -162,6 +165,7 @@ posGoodRel=goodRelationsTblFDR;
 for i=1:length(all_reg)
     figure
     angleProbs=cell2mat(posGoodRel.angleProbs(posGoodRel.sourceReg==all_reg(i)));
+    nPairs(i)=size(angleProbs,1);
     meanAngleProbs=mean(angleProbs,1);
     stdAngleProbs=std(angleProbs,[],1);
     histogram("BinEdges",[-180:18:180],"BinCounts",meanAngleProbs)
@@ -178,4 +182,19 @@ for i=1:length(all_reg)
     hold on
     x=-180:180;
     plot(-180:180,(sind(x)*0.1)+0.1,'r','LineWidth',2)
+    originalMI(i)=modulationIndex(meanAngleProbs);
+
+    niter=1000;
+    shuffleMI=[];
+    m=[];
+    for j=1:niter
+        permMat=[];
+        for k=1:size(angleProbs,1)
+            permMat(k,:)=randperm(size(angleProbs,2));
+        end
+        m(j,:)=mean(angleProbs(permMat),1)/sum(mean(angleProbs(permMat),1));
+        shuffleMI(j)=modulationIndex(m(j,:));
+    end
+
+    pval(i)=sum(shuffleMI>originalMI(i))/niter;
 end
