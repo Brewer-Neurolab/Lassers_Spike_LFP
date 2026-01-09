@@ -6,7 +6,7 @@ close all
 
 saveDir="C:\BrewerLabResearch\GitHub\Lassers_Spike_LFP\Gamma Scripts";
 
-parent_axons_dir="C:\BrewerLabResearch\OneDrive_1_7-16-2025\downsampled tunnels\High_Gamma"; %change when switching
+parent_axons_dir="C:\BrewerLabResearch\OneDrive_1_7-16-2025\downsampled tunnels\Low_Gamma"; %change when switching
 axons_dir=dir(parent_axons_dir);
 axons_folders=string({axons_dir.name});
 axons_folders=axons_folders([axons_dir.isdir]);
@@ -72,12 +72,12 @@ for nFF=1:height(ff_axon_tbl)
     thresh_mult=1;
 
     %define max number of samples for combining LFPs
-    nsamples_combine_thresh=(1/300)*re_fs*3; %change when switching
+    nsamples_combine_thresh=(1/100)*re_fs*3; %change when switching
     % nsamples_combine_thresh=[];
 
     %define min lfp length as 2x shortest gamma cycle
     minLFPCycles=2; %default 2
-    minLFPLength=(1/300)*minLFPCycles*re_fs; %change when switching
+    minLFPLength=(1/100)*minLFPCycles*re_fs; %change when switching
 
     [LFPEndPts,LFPAmplitude,LFPHilbert]=identify_lfps(data,re_fs,t_rec,thresh_mult,minLFPLength,minLFPCycles,nsamples_combine_thresh);
     LFPAngles=wrapTo360(angle(LFPHilbert)*(180/pi));
@@ -96,7 +96,7 @@ for nFF=1:height(ff_axon_tbl)
     
     myTable=sourceLFP_targetSpike_relations_NoThresh(t,re_t,data,logicalValidLFPs,LFPEndPts,LFPAmplitude,LFPAngles,ff_axon_tbl.fi(nFF),ff_axon_tbl.Electrode(nFF),sourceReg,targetElecs,targetReg,well_spike_dyn,20,thresh_mult,...
         fullfile(parent_wells_dir,wells_folders(ff_axon_tbl.fi(nFF))+"\"),...
-        "C:\BrewerLabResearch\GitHub\Lassers_Spike_LFP\Gamma Scripts\Images_High"); %change when switching
+        "C:\BrewerLabResearch\GitHub\Lassers_Spike_LFP\Gamma Scripts\Images_Low"); %change when switching
 
 
     if isempty(relationTable)
