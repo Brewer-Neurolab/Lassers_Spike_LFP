@@ -67,7 +67,7 @@ testing_idx=[find(ff_axon_tbl.Subregion=="DG-CA3")]';
 
 relationTable=[];
 
-for nFF=1:height(ff_axon_tbl)
+for nFF=32%1:height(ff_axon_tbl)
     data=load(fullfile(parent_axons_dir,axons_folders(ff_axon_tbl.fi(nFF)),ff_axon_tbl.Electrode(nFF)+".mat"));
     % re_fs=data.re_fs;
     re_fs=1000;

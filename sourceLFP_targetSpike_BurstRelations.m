@@ -144,16 +144,16 @@ for nElec=1:length(targetElecs)
     ax.LineWidth=4;
     ax.TickLength=[0.01 0.05];
 
-    title(fAmp_axis,"Well Burst Times VS Amplitude")
+    title(fAmp_axis,"Well Burst ms VS Amplitude")
     % if ampPval<1/nIter
     %     subtitle("mod idx="+round(ampMI,2)+" p<"+1/nIter)
     % else
     %     subtitle("mod idx="+round(ampMI,2,"significant")+" p="+round(ampPval,2,"significant"))
     % end
-    subtitle(fAmp_axis,"R^2="+round(rsq,2,"significant")+" Slope "+round(coeff(2),2,'significant')+" p="+round(ampPval,2,"significant"))
-    ylabel(fAmp_axis,"Burst Times")
-    xlabel(Amp_axis,"Amplitude uV")
-    set(fAmp_axis,"FontSize",50)
+    subtitle(fAmp_axis,"R^2="+round(rsq,2,"significant")+" Slope "+round(coeff(2),2,'significant')+" p="+round(ampPval,1,"significant"))
+    ylabel(fAmp_axis,"Burst ms")
+    xlabel(fAmp_axis,"Amplitude uV")
+    set(fAmp_axis,"FontSize",64)
     % set(gca,"Position",[0.13,0.2,0.7750,0.6])
     
     % saveas(gcf,fullfile(save_dir,"AmpMI "+sourceElec+"-"+targetElecs(nElec)+" FID "+fi+".png"),"png")
@@ -186,16 +186,16 @@ for nElec=1:length(targetElecs)
     xlim([-180,180])
     % xticks(angleEdges2Cycle(1:2:end))
     xticks([-180,-90,0,90,180])
-    title("Well Burst Times VS Angle")
+    title("Well Burst ms VS Angle")
     if anglePval<1/nIter
         subtitle("mod idx="+round(angleMI,2)+" p<"+1/nIter)
     else
         subtitle("mod idx="+round(angleMI,2)+" p="+anglePval)
     end
-    ylabel("BurstTimes")
+    ylabel("Burst ms")
     xlabel("Angle")
     xtickangle(0)
-    set(gca,"FontSize",50)
+    set(gca,"FontSize",64)
     % set(gca,"Position",[0.13,0.2,0.7750,0.6])
     ax=gca;
     ax.LineWidth=4;

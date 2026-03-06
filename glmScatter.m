@@ -56,14 +56,16 @@ hold off
 
 if isstring(glmx)
     if glmx=="mdl"
-        xlabel("-log10 p spiking model")
+        % xlabel("-log10 p spiking model")
+        xlabel("-log10 p bursting model")
     end
 else
     xlabel("-log10 p "+coeff_rowNames(glmx))
 end
 if isstring(glmy)
     if glmy=="mdl"
-        ylabel("-log10 p spiking model")
+        % ylabel("-log10 p spiking model")
+        ylabel("-log10 p bursting model")
     end
 else
     ylabel("-log10 p "+coeff_rowNames(glmy))
