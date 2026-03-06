@@ -28,7 +28,7 @@ ff_axon_tbl=table();
 row=1;
 for fi=1:length(axon_spikes)
     for nelec=1:height(axon_spikes{fi})
-        if ~isempty(axon_spikes{fi}.up_ff{nelec})
+        if ~isempty(axon_spikes{fi}.up_ff{nelec}) | (~isempty(axon_spikes{fi}.up_fb{nelec}) & axon_spikes{fi}.Subregion(nelec)=="CA1-EC")
             ff_axon_tbl.fi(row)=fi;
             ff_axon_tbl.Subregion(row)=axon_spikes{fi}.Subregion(nelec);
             ff_axon_tbl.interRegi(row)=find(interRegions==axon_spikes{fi}.Subregion(nelec));
@@ -38,18 +38,27 @@ for fi=1:length(axon_spikes)
             tunnelReg=split(axon_spikes{fi}.Subregion(nelec),{'-'});
             ff_axon_tbl.FFReg(row)=tunnelReg(2);
             ff_axon_tbl.subi(row)=find(subregions==tunnelReg(2));
+
+            if isempty(axon_spikes{fi}.up_ff{nelec}) & ~isempty(axon_spikes{fi}.up_fb{nelec}) & axon_spikes{fi}.Subregion(nelec)=="CA1-EC"
+                ff_axon_tbl.Subregion(row)="EC-CA1";
+                ff_axon_tbl.FFReg(row)="CA1";
+                ff_axon_tbl.subi(row)=4;
+            end
+
             row=row+1;
         end
     end
 end
 
 %3.5 SD
-well_spike_dyn=load("D:\Brewer lab data\Slow Oscillation 4 Chamber 5 Tunnel Arrays\4x 210715 210806\1\Well Spikes\well_spike_dynamics_table_hfs_3-5.mat");
+% well_spike_dyn=load("D:\Brewer lab data\Slow Oscillation 4 Chamber 5 Tunnel Arrays\4x 210715 210806\1\Well Spikes\well_spike_dynamics_table_hfs_3-5.mat");
 
 %5SD
-% well_spike_dyn=load("D:\Brewer lab data\Slow Oscillation 4 Chamber 5 Tunnel Arrays\4x 210715 210806\1\Well Spikes 5SD Min\well_spike_dynamics_table_hfs.mat")
+well_spike_dyn=load("D:\Brewer lab data\Slow Oscillation 4 Chamber 5 Tunnel Arrays\4x 210715 210806\1\Well Spikes 5SD Min\well_spike_dynamics_table_hfs.mat");
 
 well_spike_dyn=well_spike_dyn.well_spike_dynamics_table;
+
+all_reg=[interRegions,"EC-CA1"];
 %% Compute MI and heat maps
 clc
 
@@ -58,7 +67,7 @@ testing_idx=[find(ff_axon_tbl.Subregion=="DG-CA3")]';
 
 relationTable=[];
 
-for nFF=30%1:height(ff_axon_tbl)
+for nFF=1:height(ff_axon_tbl)
     data=load(fullfile(parent_axons_dir,axons_folders(ff_axon_tbl.fi(nFF)),ff_axon_tbl.Electrode(nFF)+".mat"));
     % re_fs=data.re_fs;
     re_fs=1000;
@@ -86,7 +95,7 @@ for nFF=30%1:height(ff_axon_tbl)
     for nEndPts=1:size(LFPEndPts,1)
         validLFPIndex=[validLFPIndex,LFPEndPts(nEndPts,1):LFPEndPts(nEndPts,2)];
     end
-     logicalValidLFPs=zeros(1,length(re_t)); % uncomment for lower bound LFP
+    logicalValidLFPs=zeros(1,length(re_t)); % uncomment for lower bound LFP
     logicalValidLFPs=ones(1,length(re_t)); % considers all LFPs
     % logicalValidLFPs(validLFPIndex)=1;
 

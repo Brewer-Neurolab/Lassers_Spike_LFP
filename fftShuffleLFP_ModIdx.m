@@ -1,4 +1,4 @@
-function [pval,MIVec]=fftShuffleLFP_ModIdx(myMI,myData,LFPEndPts,spikeIdx,myEdges,nIter,hilbertDim)
+function [pval,MIVec,myProbability]=fftShuffleLFP_ModIdx(myMI,myData,LFPEndPts,spikeIdx,myEdges,nIter,hilbertDim)
 
 % define regions to shuffle from high amplitude true idxs
 
@@ -13,6 +13,7 @@ end
 % spikeCells=logical(spikeCells);
 
 MIVec=[];
+myProbability=[];
 % https://www.mathworks.com/matlabcentral/answers/451578-fft-and-ifft-random-phases
 for myIter=1:nIter
     randData=[];
@@ -58,8 +59,8 @@ for myIter=1:nIter
 
     spikelocs=cell2mat(spikeCells);
 
-    myProbability=histcounts(randData(spikelocs),myEdges,"Normalization","probability");
-    MI=modulationIndex(myProbability);
+    myProbability(nIter,:)=histcounts(randData(spikelocs),myEdges,"Normalization","probability");
+    MI=modulationIndex(myProbability(nIter,:));
 
     MIVec(myIter)=MI;
 end

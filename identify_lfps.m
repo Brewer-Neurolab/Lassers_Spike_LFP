@@ -22,8 +22,10 @@ dataAmplitude=dataAmplitude*(max(abs(myHilbert))/max(dataAmplitude));
 
 %perform thresholding
 ampSTD=std(dataAmplitude);
-%lowThresh=thresh*ampSTD+mean(dataAmplitude);
+
+% lowThresh=thresh*ampSTD+mean(dataAmplitude);
 lowThresh=5;
+% lowThresh=5;
 % highThresh=2.5*ampSTD;
 isAboveThresh=dataAmplitude>=lowThresh;
 

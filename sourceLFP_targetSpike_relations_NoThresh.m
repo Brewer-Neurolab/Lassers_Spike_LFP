@@ -168,30 +168,32 @@ for nElec=1:length(targetElecs)
     % set(gca,"FontSize",24)
     % axis square
     pbaspect([2,1,1])
+    fAmp_axis.Position=fAmp_axis.Position.*[1,3,1,0.5];
     
     ax=fAmp_axis;
     ax.LineWidth=4;
     ax.TickLength=[0.01 0.05];
 
-    title("Well Spikes VS Amplitude")
+    title(fAmp_axis,"Well Spikes VS Amplitude")
     % if ampPval<1/nIter
     %     subtitle("R^2="+round(rsq,2)+" p<"+1/nIter)
     % else
     %     subtitle("R^2="+round(rsq,2,"significant")+" Slope "+coeff(2)+" p="+ampPval)
     % end
 
-    subtitle("R^2="+round(rsq,2,"significant")+" Slope "+round(coeff(2),2,'significant')+" p="+round(ampPval,2,"significant"))
+    subtitle(fAmp_axis,"R^2="+round(rsq,2,"significant")+" Slope "+round(coeff(2),2,'significant')+" p="+round(ampPval,2,"significant"))
 
-    ylabel("Spikes")
-    xlabel("Amplitude uV")
-    set(gca,"FontSize",50)
-    set(gca,"Position",[0.13,0.2,0.7750,0.6])
+    ylabel(fAmp_axis,"Spikes")
+    xlabel(fAmp_axis,"Amplitude uV")
+    set(fAmp_axis,"FontSize",60)
+    % set(fAmp_axis,"Position",[0.13,0.2,0.7750,0.6])
     
     % saveas(gcf,fullfile(save_dir,"AmpMI "+sourceElec+"-"+targetElecs(nElec)+" FID "+fi+".png"),"png")
     %% Angle MI
     % well spikes vs angle
     % nexttile
     fAngle=figure('Name',targetElecs(nElec)+" angle",'NumberTitle','off','WindowState','fullscreen');
+    fAngle_axis=axes('Parent',fAngle);
     histogram([wellBurstAngles-360,wellBurstAngles],angleEdges2Cycle)
     % angleProbs=histcounts([wellBurstAngles-360,wellBurstAngles],angleEdges,"Normalization","probability");
     angleProbs=histcounts(wrapTo180(wellBurstAngles),angleEdges,"Normalization","probability");
@@ -206,6 +208,7 @@ for nElec=1:length(targetElecs)
     
     % axis square
     pbaspect([2,1,1])
+    fAngle_axis.Position=fAngle_axis.Position.*[1,3,1,0.5];
     xlim([-180,180])
     % xticks(angleEdges2Cycle(1:2:end))
     xticks([-180,-90,0,90,180])
@@ -218,8 +221,8 @@ for nElec=1:length(targetElecs)
     ylabel("Spikes")
     xlabel("Angle")
     xtickangle(0)
-    set(gca,"FontSize",50)
-    set(gca,"Position",[0.13,0.2,0.7750,0.6])
+    set(gca,"FontSize",60)
+    % set(gca,"Position",[0.13,0.2,0.7750,0.6])
     ax=gca;
     ax.LineWidth=4;
     ax.TickLength=[0.01 0.05];
