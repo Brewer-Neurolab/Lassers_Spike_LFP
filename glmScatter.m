@@ -1,4 +1,4 @@
-function glmScatter(glmTblAll,glmx,glmy,subregion,alpha)
+function [myxlim,myylim]=glmScatter(glmTblAll,glmx,glmy,subregion,alpha)
 
 xlog10=[];
 x=[];
@@ -56,17 +56,21 @@ hold off
 
 if isstring(glmx)
     if glmx=="mdl"
-        xlabel("-log10 p spiking model")
+        xlabel("-log_{10} P (Spiking Model)")
+    else
+        xlabel(glmx)
     end
 else
-    xlabel("-log10 p "+coeff_rowNames(glmx))
+    xlabel("-log_{10} P "+coeff_rowNames(glmx))
 end
 if isstring(glmy)
     if glmy=="mdl"
-        ylabel("-log10 p spiking model")
+        ylabel("-log_{10} P (Spiking Model)")
+    else
+        ylabel(glmy)
     end
 else
-    ylabel("-log10 p "+coeff_rowNames(glmy))
+    ylabel("-log_{10} P "+coeff_rowNames(glmy))
 end
 
 ax=gca;
@@ -74,7 +78,12 @@ ax.XScale="log";
 ax.YScale="log";
 
 xticks(logspace(-10,10,21))
-xticklabels("10^{"+[-10:10]+"}")
+% xticklabels("10^{"+[-10:10]+"}")
+% xticklabels(logspace(-10,10,21))
+xticklabels(linspace(-10,10,21))
+yticks(logspace(-10,10,21))
+% yticklabels(logspace(-10,10,21))
+yticklabels(linspace(-10,10,21))
 
 % ylim([0.001,50])
 % xlim([0.001,500])
@@ -93,15 +102,17 @@ nsig=sum(xlog10>-log10(BonferroniP) & ylog10>-log10(BonferroniP));
 
 % title(subregion+" #Significant Connections: "+nsig+"/"+height(glmTbl))
 disp(subregion+" #Significant Connections: "+nsig+"/"+height(glmTbl))
-set(gca,"FontSize",32)
+set(gca,"FontSize",40)
 
 ax.LineWidth=2;
 ax.TickLength=[0.05,0.05];
 
 axis square
 
-xlim([min(xlog10)*0.1,max(xlog10)*10])
-ylim([min(ylog10)*0.1,max(ylog10)*10])
+xlim([min(xlog10)*0.1,max(xlog10)*10]);
+ylim([min(ylog10)*0.1,max(ylog10)*10]);
+myxlim={[min(xlog10)*0.1,max(xlog10)*10]};
+myylim={[min(ylog10)*0.1,max(ylog10)*10]};
 
 if min(xlim)>0.01
     xlim([0.01,max(xlog10)*10])

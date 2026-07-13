@@ -70,16 +70,18 @@ for nReg=1:length(all_reg)
                 % end
             end
         end
-        f=figure;
+        figure('units','normalized','outerposition',[0 0 1 1])
         xvals=split(axonSpikes{FI}.("Electrode Pairs")(Rows),{'-'});
         xvals=xvals(:,1);
         yvals=xvals;
-        heatmap(xvals,yvals,round(MIMat{FI},2))
-        title("Mutual Info (Bits) FID "+FI)
-        set(gca,"FontSize",16)
+        k=heatmap(xvals,yvals,round(MIMat{FI},2));
+        k.Position=[.25 .15 .5 .8];
+        % title("Mutual Info (Bits) FID "+FI)
+        set(gca,"FontSize",50)
 
         disp("FID "+FI)
-        saveas(f,fullfile(saveDir,all_reg(nReg)+" FID "+FI),"png")
+        
+        saveas(k,fullfile(saveDir,all_reg(nReg)+" FID "+FI),"png")
         close all
     end
     

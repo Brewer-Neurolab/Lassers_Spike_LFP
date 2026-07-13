@@ -2,6 +2,7 @@
 
 clear
 clc
+close all
 
 % data=load("D:\Brewer lab data\Slow Oscillation 4 Chamber 5 Tunnel Arrays\4x 210715 210806\1\18-Apr-2023_A\4x 33152 210715 21div 210806_1_mat_files\G12.mat");
 data=load("D:\Brewer lab data\Slow Oscillation 4 Chamber 5 Tunnel Arrays\4x 210715 210806\1\18-Apr-2023_A\4x 33168 210715 21div 210806_1_mat_files\G12.mat");
@@ -48,7 +49,7 @@ yticks([0.5,4,10,30,100,300,1000,3000])
 %% Raw signal spectrum
 % sample_raw=data(270000:320000);
 sample_raw=data(250000:318500);
-[cfs,frq]=cwt(sample_raw,"amor",fs,"FrequencyLimits",[0.5,300]);
+[cfs,frq]=cwt(sample_raw,"amor",fs,"FrequencyLimits",[3,300]);
 t_rep=1/fs:1/fs:length(sample_raw)/fs;
 figure
 plot(t_rep,sample_raw,'Color','k','LineWidth',2)
@@ -56,16 +57,18 @@ xlabel("Time (s)")
 ylabel("uV")
 xlim([min(t_rep),max(t_rep)])
 ax=gca;
-set(ax,"FontSize",18)
+set(ax,"FontSize",50)
 ax.TickLength(1)=0.025;
 ax.LineWidth=2;
 ax.XMinorTick="on";
 ax.YMinorTick="on";
 xlim([0.5,2])
+axis square
 
 
 figure
 surface(t_rep,frq,log10(abs(cfs)./frq))
+% surface(t_rep,frq,abs(cfs)./frq)
 shading flat
 ax=gca;
 ax.YScale="log";
@@ -77,8 +80,10 @@ xlim([0.5,2])
 ylim([3,300])
 xlabel("Time (s)")
 ylabel("Frequency (Hz)")
-set(gca,"FontSize",18)
-colormap("jet")
+set(gca,"FontSize",50)
+% colormap("jet")
+colormap(flipud(slanCM("plasma")))
+axis square
 
 %power from hilbert
 [A,B,C,D]=butter(8,10/(fs/2),'low');
@@ -101,11 +106,14 @@ hold off
 % xlim([min(t_rep),max(t_rep)])
 xlim([0.5,2])
 ax=gca;
-set(ax,"FontSize",18)
+set(ax,"FontSize",50)
+% xticks(-1000:500:1000)
+% xticklabels(-1000:500:1000)
 ax.TickLength(1)=0.025;
 ax.LineWidth=2;
 ax.XMinorTick="on";
 ax.YMinorTick="on";
+axis square
 
 % thresh=std(hilbertAmp);
 % aboveThresh=find(hilbertAmp>thresh);
@@ -152,7 +160,8 @@ ax.YScale="log";
 yticks([0.5,4,10,30,100,300])
 xlabel("Time (s)")
 ylabel("Frequency")
-colormap("jet")
+% colormap("jet")
+colormap(flipud(slanCM("plasma")))
 colorbar
 
 %power from hilbert
@@ -182,12 +191,13 @@ plot(t_rep,spike_repeat,'Color','k','LineWidth',2)
 xlabel("Time (s)")
 ylabel("uV")
 ax=gca;
-set(ax,"FontSize",18)
+set(ax,"FontSize",50)
 ax.TickLength(1)=0.025;
 ax.LineWidth=2;
 ax.XMinorTick="on";
 ax.YMinorTick="on";
 xlim([0.5,2])
+axis square
 
 [cfs,frq]=cwt(spike_repeat,"amor",fs,"FrequencyLimits",[3,300]);
 
@@ -195,20 +205,24 @@ figure
 % surface(t_rep,frq,abs(cfs)./repmat(frq,[1,size(cfs,2)]))
 % surface(t_rep,frq,10*log10(abs(cfs)))
 % surface(t_rep,frq,10*log10(abs(cfs))./repmat(frq,[1,size(cfs,2)]))
-surface(t_rep,frq,abs(cfs)./frq)
+% surface(t_rep,frq,abs(cfs)./frq)
+surface(t_rep,frq,log10(abs(cfs)./frq))
 shading flat
 ax=gca;
 ax.YScale="log";
 yticks([0.5,3,10,30,100,300])
 xlabel("Time (s)")
 ylabel("Frequency")
-colormap("jet")
+% colormap("jet")
+colormap(flipud(slanCM("plasma")))
 c=colorbar;
-set(gca,"FontSize",18)
+clim([-4,2])
+set(gca,"FontSize",50)
 % xlim([min(t_rep),max(t_rep)])
 xlim([0.5,2])
 ylim([3,300])
-c.Label.String="Log10 Magnitude/Hz";
+c.Label.String="Log Magnitude/Hz";
+axis square
 
 %power from hilbert
 [A,B,C,D]=butter(8,10/(fs/2),'low');
@@ -231,11 +245,12 @@ hold on
 plot(t_rep,hilbertAmp,'Color','g','LineWidth',2)
 hold off
 ax=gca;
-set(ax,"FontSize",18)
+set(ax,"FontSize",50)
 ax.TickLength(1)=0.025;
 ax.LineWidth=2;
 ax.XMinorTick="on";
 ax.YMinorTick="on";
+axis square
 
 thresh=std(hilbertAmp);
 % aboveThresh=find(hilbertAmp>thresh);
@@ -272,7 +287,8 @@ ax.YScale="log";
 yticks([0.5,4,10,30,100,300])
 xlabel("Time (s)")
 ylabel("Frequency (Hz)")
-colormap("jet")
+% colormap("jet")
+colormap(flipud(slanCM("plasma")))
 c=colorbar;
 c.Label.String="Magnitude/Hz";
 xlim([min(t_rep),max(t_rep)])
@@ -322,12 +338,13 @@ xlabel("Time (s)")
 ylabel("uV")
 xlim([min(t_rep),max(t_rep)])
 ax=gca;
-set(ax,"FontSize",18)
+set(ax,"FontSize",50)
 ax.TickLength(1)=0.025;
 ax.LineWidth=2;
 ax.XMinorTick="on";
 ax.YMinorTick="on";
 xlim([0.5,2])
+axis square
 
 [cfs,frq]=cwt(spike_repeat,"amor",fs,"FrequencyLimits",[3,300]);
 
@@ -335,21 +352,26 @@ figure
 % surface(t_rep,frq,abs(cfs)./repmat(frq,[1,size(cfs,2)]))
 % surface(t_rep,frq,10*log10(abs(cfs)))
 % surface(t_rep,frq,10*log10(abs(cfs))./repmat(frq,[1,size(cfs,2)]))
-surface(t_rep,frq,abs(cfs)./frq)
+% surface(t_rep,frq,abs(cfs)./frq)
+surface(t_rep,frq,log10(abs(cfs)./frq))
 shading flat
 ax=gca;
 ax.YScale="log";
 yticks([0.5,3,10,30,100,300])
 xlabel("Time (s)")
 ylabel("Frequency (Hz)")
-colormap("jet")
+% colormap("jet")
+colormap(flipud(slanCM("plasma")))
 c=colorbar;
-c.Label.String="Magnitude/Hz";
+clim([-4,2])
+c.Label.String="Log Magnitude/Hz";
 % xlim([min(t_rep),max(t_rep)])
 xlim([0.5,2])
 ylim([3,300])
-set(gca,"FontSize",18)
-colormap("jet")
+set(gca,"FontSize",50)
+% colormap("jet")
+colormap(flipud(slanCM("plasma")))
+axis square
 
 %power from hilbert
 [A,B,C,D]=butter(8,10/(fs/2),'low');
@@ -372,11 +394,12 @@ hold off
 % xlim([min(t_rep),max(t_rep)])
 xlim([0.5,2])
 ax=gca;
-set(ax,"FontSize",18)
+set(ax,"FontSize",50)
 ax.TickLength(1)=0.025;
 ax.LineWidth=2;
 ax.XMinorTick="on";
 ax.YMinorTick="on";
+axis square
 
 thresh=std(hilbertAmp);
 % aboveThresh=find(hilbertAmp>thresh);
@@ -409,7 +432,8 @@ ax.YScale="log";
 yticks([0.5,4,10,30,100,300])
 xlabel("Time (s)")
 ylabel("Frequency (Hz)")
-colormap("jet")
+% colormap("jet")
+colormap(flipud(slanCM("plasma")))
 c=colorbar;
 c.Label.String="Magnitude/Hz";
 xlim([min(t_rep),max(t_rep)])

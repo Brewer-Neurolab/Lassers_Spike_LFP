@@ -3,16 +3,16 @@ clear
 clc
 close all
 %load downsampled LFP
-LFP=load("D:\Brewer lab data\Slow Oscillation 4 Chamber 5 Tunnel Arrays\4x 210715 210806\1\downsampled tunnels\Theta\4x 33168 210715 21div 210806_1_mat_files\G12.mat");
+LFP=load("D:\Brewer lab data\Slow Oscillation 4 Chamber 5 Tunnel Arrays\4x 210715 210806\1\downsampled tunnels\Theta\4x 33152 210715 21div 210806_1_mat_files\G12.mat");
 LFP=LFP.filtered_data;
-spikes=load("D:\Brewer lab data\Slow Oscillation 4 Chamber 5 Tunnel Arrays\4x 210715 210806\1\18-Apr-2023_A\4x 33168 210715 21div 210806_1_mat_files\times_G12.mat");
+spikes=load("D:\Brewer lab data\Slow Oscillation 4 Chamber 5 Tunnel Arrays\4x 210715 210806\1\18-Apr-2023_A\4x 33152 210715 21div 210806_1_mat_files\times_G12.mat");
 spikes=spikes.cluster_class(:,2);
 %5SD spikes
 well_spike_dyn=load("D:\Brewer lab data\Slow Oscillation 4 Chamber 5 Tunnel Arrays\4x 210715 210806\1\Well Spikes 5SD Min\well_spike_dynamics_table_hfs.mat");
 well_spike_dyn=well_spike_dyn.well_spike_dynamics_table;
 
-CA1_Elec=well_spike_dyn.channel_name(well_spike_dyn.regi==4 & well_spike_dyn.fi==6);
-CA3_Elec=well_spike_dyn.channel_name(well_spike_dyn.regi==3 & well_spike_dyn.fi==6);
+CA1_Elec=well_spike_dyn.channel_name(well_spike_dyn.regi==4 & well_spike_dyn.fi==5);
+CA3_Elec=well_spike_dyn.channel_name(well_spike_dyn.regi==3 & well_spike_dyn.fi==5);
 
 fs=25000;
 re_fs=1000;
@@ -118,13 +118,14 @@ for nElec=1:length(CA3_Elec)
     xcorr_table.r{nElec}=r;
     xcorr_table.l{nElec}=l;
     xcorr_table.pval(nElec)=P(1,2);
+    xticks([-200:50:200])
 end
 %% xcorr CA1 LFP
 xcorr_table=table();
 
 for nElec=1:length(CA1_Elec)
     myElec=load("D:\Brewer lab data\Slow Oscillation 4 Chamber 5 Tunnel Arrays\4x 210715 210806\1\downsampled wells\Theta\4x 33152 210715 21div 210806_1.h5\"+CA1_Elec(nElec)+".mat");
-    wellLFP=myElec.re_LFP;
+    wellLFP=myElec.filtered_data;
 
     % [r,l]=xcorr(wellLFP,LFP,re_fs*0.1,"normalized");
     [r,l]=xcorr(wellLFP(logicalValidLFPs),LFP(logicalValidLFPs),re_fs*0.1,"normalized");
@@ -143,13 +144,14 @@ for nElec=1:length(CA1_Elec)
     xcorr_table.pval(nElec)=P(1,2);
     xlabel("Lag (ms)")
     ylabel("r normalized")
-    set(gca,"FontSize",18)
+    set(gca,"FontSize",36)
 end
 %% xcorr CA3 LFP
 xcorr_table=table();
+close all
 
 for nElec=1:length(CA3_Elec)
-    myElec=load("D:\Brewer lab data\Slow Oscillation 4 Chamber 5 Tunnel Arrays\4x 210715 210806\1\downsampled wells\Theta\4x 33168 210715 21div 210806_1.h5\"+CA3_Elec(nElec)+".mat");
+    myElec=load("D:\Brewer lab data\Slow Oscillation 4 Chamber 5 Tunnel Arrays\4x 210715 210806\1\downsampled wells\Theta\4x 33152 210715 21div 210806_1.h5\"+CA3_Elec(nElec)+".mat");
     wellLFP=myElec.filtered_data;
 
     [r,l]=xcorr(LFP,wellLFP,re_fs*1,"normalized");
@@ -178,5 +180,4 @@ for nElec=1:length(CA3_Elec)
     axis square
     xticks(linspace(-200,200,5))
     set(gca,'XMinorTick','on','YMinorTick','on')
-    
 end

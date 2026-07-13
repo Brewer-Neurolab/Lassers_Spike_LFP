@@ -184,7 +184,7 @@ for nElec=1:length(targetElecs)
     subtitle(fAmp_axis,"R^2="+round(rsq,2,"significant")+" Slope "+round(coeff(2),2,'significant')+" p="+round(ampPval,2,"significant"))
 
     ylabel(fAmp_axis,"Spikes")
-    xlabel(fAmp_axis,"Amplitude uV")
+    xlabel(fAmp_axis,"Amplitude \muV")
     set(fAmp_axis,"FontSize",60)
     % set(fAmp_axis,"Position",[0.13,0.2,0.7750,0.6])
     
@@ -322,7 +322,7 @@ for nElec=1:length(targetElecs)
         xlim([-180,180])
 
         xlabel("Angle (degrees)")
-        ylabel("Amplitude uV")
+        ylabel("Amplitude \muV")
 
         set(gca,"FontSize",50)
 
