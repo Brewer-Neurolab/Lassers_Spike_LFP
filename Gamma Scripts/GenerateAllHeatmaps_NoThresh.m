@@ -6,7 +6,7 @@ close all
 
 saveDir="C:\BrewerLabResearch\GitHub\Lassers_Spike_LFP\Gamma Scripts";
 
-parent_axons_dir="C:\BrewerLabResearch\OneDrive_1_7-16-2025\downsampled tunnels\Low_Gamma"; %change when switching
+parent_axons_dir="C:\BrewerLabResearch\OneDrive_1_7-16-2025\18-Apr-2023_A\ASR\downsampled tunnels\Low_Gamma"; %change when switching
 axons_dir=dir(parent_axons_dir);
 axons_folders=string({axons_dir.name});
 axons_folders=axons_folders([axons_dir.isdir]);
@@ -96,7 +96,7 @@ for nFF=1:height(ff_axon_tbl)
     
     myTable=sourceLFP_targetSpike_relations_NoThresh(t,re_t,data,logicalValidLFPs,LFPEndPts,LFPAmplitude,LFPAngles,ff_axon_tbl.fi(nFF),ff_axon_tbl.Electrode(nFF),sourceReg,targetElecs,targetReg,well_spike_dyn,20,thresh_mult,...
         fullfile(parent_wells_dir,wells_folders(ff_axon_tbl.fi(nFF))+"\"),...
-        "C:\BrewerLabResearch\GitHub\Lassers_Spike_LFP\Gamma Scripts\Images_Low"); %change when switching
+        "C:\BrewerLabResearch\GitHub\Lassers_Spike_LFP\Gamma Scripts\Images_Low_ASR"); %change when switching
 
 
     if isempty(relationTable)
