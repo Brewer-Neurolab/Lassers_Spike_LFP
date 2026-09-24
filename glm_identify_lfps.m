@@ -1,4 +1,4 @@
-function [endPts,dataAmplitude,myHilbert]=identify_lfps(data,fs, t_s,thresh,minLFPLength,minLFPCycles,nsamples_combine_thresh)
+function [endPts,dataAmplitude,myHilbert]=glm_identify_lfps(data,fs, t_s,thresh,minLFPLength,minLFPCycles,nsamples_combine_thresh)
 %data should be a 1d vector
 %fs should be the sampling rate, input as a scalar
 %the min length of a wave should be specified in samples
