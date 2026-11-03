@@ -7,7 +7,7 @@ close all
 
 saveDir="C:\BrewerLabResearch\GitHub\Lassers_Spike_LFP\Gamma Scripts";
 
-parent_axons_dir="C:\BrewerLabResearch\OneDrive_1_7-16-2025\downsampled tunnels\High_Gamma";
+parent_axons_dir="C:\BrewerLabResearch\OneDrive_1_7-16-2025\downsampled tunnels\ASR\Low_Gamma";
 axons_dir=dir(parent_axons_dir);
 axons_folders=string({axons_dir.name});
 axons_folders=axons_folders([axons_dir.isdir]);
@@ -86,12 +86,12 @@ for nFF=1:height(ff_axon_tbl)
     thresh_mult=1;
 
     %define max number of samples for combining LFPs
-    nsamples_combine_thresh=(1/300)*re_fs*3;
+    nsamples_combine_thresh=(1/100)*re_fs*3;
     % nsamples_combine_thresh=[];
 
     %define min lfp length as 2x shortest theta cycle
     minLFPCycles=2; %default 2
-    minLFPLength=(1/300)*minLFPCycles*re_fs;
+    minLFPLength=(1/100)*minLFPCycles*re_fs;
 
     [LFPEndPts,LFPAmplitude,LFPHilbert]=identify_lfps(data,re_fs,t_rec,thresh_mult,minLFPLength,minLFPCycles,nsamples_combine_thresh);
     LFPAngles=wrapTo360(angle(LFPHilbert)*(180/pi));
@@ -155,14 +155,14 @@ for i=1:length(all_reg)
     mu=f.b1;
     sigma=f.c1/sqrt(2);
 
-    m=exp(mu+(sigma^2/2));
-    v=exp(2*mu+sigma^2)*(exp(sigma^2)-1);
+    m=exp(mu+(sigma^2/2)); %Convert from logspace to linspace mean
+    v=exp(2*mu+sigma^2)*(exp(sigma^2)-1); %Convert from logspace to linspace std
 
     xline(ax1,m+2*v)
     legend(ax1,axonNames, 'Location', 'eastoutside')
     xline(ax2,m+2*v)
 
-    last_bin=find(binEdges>m+2*v);
+    last_bin=find(binEdges>m+2*v); %Determines
     last_bin=last_bin(1);
 
     title(ax1,all_reg(i)+" "+sum(any(ampPts(:,last_bin:end),2))+"/"+size(ampPts,1))
@@ -233,7 +233,7 @@ for i=1:length(all_reg)
     % remove integrations less than 50000
     % lfpPropsTbl(lfpPropsTbl.Subregion==all_reg(i) & lfpPropsTbl.ampIntegration<=50000,:)=[];
     % remove time less than 5 seconds
-    lfpPropsTbl(lfpPropsTbl.Subregion==all_reg(i) & lfpPropsTbl.sIntegration<=30,:)=[];
+    lfpPropsTbl(lfpPropsTbl.Subregion==all_reg(i) & lfpPropsTbl.sIntegration<=0.75,:)=[];
 end
 
 %new means
@@ -262,24 +262,27 @@ axis square
 set(gca,"FontSize",28)
 
 %% Stats calc
-y=log10(lfpPropsTbl.ampIntegration);
-g={lfpPropsTbl.Subregion};
+y = log10(lfpPropsTbl.ampIntegration);
+g = {lfpPropsTbl.Subregion};
 
-[p,tbl,stats]=anovan(y,g);
-[c,m]=multcompare(stats,'CriticalValueType','hsd');
+[p, tbl, stats] = anovan(y, g);
+[c, m] = multcompare(stats, 'CriticalValueType', 'hsd');
+
+% Use stats.grpnames{1} for anovan (not stats.gnames)
+m_full = zeros(length(all_reg), 2);
 
 for i = 1:length(all_reg)
-    check = any(strcmp(all_reg(i), g{1}));
-    if (~check)
-        m(i, 1) = 0;
-        m(i, 2) = 0;
+    idx = find(strcmp(all_reg(i), stats.grpnames{1}));
+    if ~isempty(idx)
+        m_full(i, 1) = m(idx, 1);
+        m_full(i, 2) = m(idx, 2);
     end
 end
 
 figure
-bar(regCats,m(:,1),'FaceColor','#75ebeb')
+bar(regCats, m_full(:,1), 'FaceColor', '#75ebeb')
 hold on
-errorbar(regCats,m(:,1),m(:,2),'LineStyle','none','Color','k','LineWidth',3)
+errorbar(regCats, m_full(:,1), m_full(:,2), 'LineStyle','none','Color','k','LineWidth',3)
 hold off
 ylim([5,8])
 % ylabel("Log_{10} Amplitude Integration")
