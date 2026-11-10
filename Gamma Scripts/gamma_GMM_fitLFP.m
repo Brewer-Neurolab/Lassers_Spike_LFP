@@ -5,13 +5,13 @@ close all
 
 saveDir="C:\BrewerLabResearch\GitHub\Lassers_Spike_LFP\Gamma Scripts";
 
-parent_axons_dir="C:\BrewerLabResearch\OneDrive_1_7-16-2025\downsampled tunnels\ASR\High_Gamma"; %Change b/w low and high gamma
+parent_axons_dir="C:\BrewerLabResearch\OneDrive_1_7-16-2025\downsampled tunnels\ASR\Low_Gamma"; %Change b/w low and high gamma
 axons_dir=dir(parent_axons_dir);
 axons_folders=string({axons_dir.name});
 axons_folders=axons_folders([axons_dir.isdir]);
 axons_folders=axons_folders(3:end);
 
-figOutDir = "C:\BrewerLabResearch\Presentations&Figures\GaussFitFigsASR_Test_HG"; %Change b/w low and high gamma
+figOutDir = "C:\BrewerLabResearch\Presentations&Figures\GaussFitFigsASR_LowGamma"; %Change b/w low and high gamma
 if ~isfolder(figOutDir), mkdir(figOutDir); end
 % ==========================================================================
 
@@ -63,8 +63,8 @@ well_spike_dyn=load("C:\BrewerLabResearch\OneDrive_1_7-16-2025\Well Spikes 5SD M
 well_spike_dyn=well_spike_dyn.well_spike_dynamics_table;
 
 % all_reg=[interRegions,"EC-CA1"];
-%all_reg=[interRegions];
-all_reg=["EC-DG"];
+all_reg=[interRegions];
+%all_reg=["EC-DG"];
 
 %% Get hilbert amps of each axon
 
@@ -89,12 +89,12 @@ for nFF=1:height(ff_axon_tbl)
     thresh_mult=1;
 
     %define max number of samples for combining LFPs
-    nsamples_combine_thresh=(1/300)*re_fs*3; %Change b/w low and high gamma
+    nsamples_combine_thresh=(1/100)*re_fs*3; %Change b/w low and high gamma
     % nsamples_combine_thresh=[];
 
     %define min lfp length as 2x shortest gamma cycle
     minLFPCycles=2; %default 2
-    minLFPLength=(1/300)*minLFPCycles*re_fs; %Change b/w low and high gamma
+    minLFPLength=(1/100)*minLFPCycles*re_fs; %Change b/w low and high gamma
 
     [LFPEndPts,LFPAmplitude,LFPHilbert]=identify_lfps(data,re_fs,t_rec,thresh_mult,minLFPLength,minLFPCycles,nsamples_combine_thresh);
     LFPAngles=wrapTo360(angle(LFPHilbert)*(180/pi));
@@ -103,11 +103,39 @@ for nFF=1:height(ff_axon_tbl)
     %               breaks logspace, histcounts and fitgmdist. Harmless for
     %               theta, but gamma envelopes do hit exact zeros.
     LFPAmplitude = LFPAmplitude(isfinite(LFPAmplitude) & LFPAmplitude > 0);
+    % Keep every LFP cell in the same orientation.
+    LFPAmplitude = LFPAmplitude(:);
     % ======================================================================
 
     LFPTable.LFP{nFF}=LFPAmplitude;
     disp(nFF+"/"+height(ff_axon_tbl))
 end
+
+% Identify rows containing usable LFP amplitude data.
+hasLFP = false(height(LFPTable),1);
+
+for r = 1:height(LFPTable)
+    hasLFP(r) = ...
+        ~isempty(LFPTable.LFP{r}) && ...
+        isnumeric(LFPTable.LFP{r}) && ...
+        any(isfinite(LFPTable.LFP{r}) & LFPTable.LFP{r} > 0);
+end
+
+processedRows = find(hasLFP);
+
+fprintf('Usable LFP data: %d/%d electrode pairs\n', ...
+    numel(processedRows),height(LFPTable));
+
+if isempty(processedRows)
+    error('No usable LFP amplitude data were extracted.');
+end
+
+% Create one robust global amplitude range for later sections.
+allAmplitudes = vertcat(LFPTable.LFP{processedRows});
+allAmplitudes = allAmplitudes( ...
+    isfinite(allAmplitudes) & allAmplitudes > 0);
+
+globalAmpRange = [min(allAmplitudes),max(allAmplitudes)];
 
 %% get average histograms of each and fit gaussian
 close all
@@ -119,10 +147,19 @@ axonsCounted=0;
 fitVec=[];
 for i=1:length(all_reg)
     figure
-    regRows=find(LFPTable.Subregion==all_reg(i));
+    regRows = find(LFPTable.Subregion == all_reg(i) & hasLFP);
+    if isempty(regRows)
+        warning('%s has no usable LFP data; skipping.',all_reg(i));
+        continue
+    end
     axonsCounted=axonsCounted+length(regRows);
     disp(axonsCounted+"/"+height(LFPTable))
-    ampRange=[min(cell2mat(LFPTable.LFP(regRows)),[],"all"),max(cell2mat(LFPTable.LFP(regRows)),[],"all")];
+    %ampRange=[min(cell2mat(LFPTable.LFP(regRows)),[],"all"),max(cell2mat(LFPTable.LFP(regRows)),[],"all")];
+    regionAmplitudes = vertcat(LFPTable.LFP{regRows});
+    regionAmplitudes = regionAmplitudes( ...
+        isfinite(regionAmplitudes) & regionAmplitudes > 0);
+
+    ampRange = [min(regionAmplitudes),max(regionAmplitudes)];
     binEdges=logspace(log10(ampRange(1)),log10(ampRange(2)),101);
     ampPts=[];
     cdfPts=[];
@@ -257,7 +294,9 @@ for i=1:length(all_reg)
         plot(10.^convert_edges_2_centers(log10(binEdges)),cdfPts(ncolors,:),'LineWidth',4,'Color',[myColors(ncolors,:)])
     end
 
-    regioncdf=histcounts([LFPTable.LFP{regRows}],binEdges,"Normalization","cdf");
+    % regioncdf=histcounts([LFPTable.LFP{regRows}],binEdges,"Normalization","cdf");
+    regionAmplitudes = vertcat(LFPTable.LFP{regRows});
+    regioncdf = histcounts(regionAmplitudes,binEdges, "Normalization","cdf");
     plot(10.^convert_edges_2_centers(log10(binEdges)),regioncdf,'r--','LineWidth',8)
 
     % plot(exp(convert_edges_2_centers(log(binEdges)))',fitvals,'r--','LineWidth',6)
@@ -365,10 +404,28 @@ set(gca,"FontSize",28)
 % ax.LineWidth=4;
 % ax.TickLength=[0.05,0.025];
 
-%% Gausian Mixed Model
+%% Gaussian Mixed Model
 close all
 rng('default')
 gofTable=LFPTable(:,1:6);
+% Explicitly initialize cell columns for every table row.
+gofTable.gmm = cell(height(gofTable),1);
+gofTable.myData = cell(height(gofTable),1);
+gofTable.boundaries = cell(height(gofTable),1);
+gofTable.originalBounds = cell(height(gofTable),1);
+% Track processing status without changing the fit logic.
+gofTable.fitStatus = repmat("not_processed",height(gofTable),1);
+gofTable.skipReason = repmat("",height(gofTable),1);
+
+% Initialize t-test outputs as missing.
+% NaN means that the test was not performed.
+gofTable.ttest_h = nan(height(gofTable),1);
+gofTable.ttest_p = nan(height(gofTable),1);
+gofTable.ttestPerformed = false(height(gofTable),1);
+
+% Optional diagnostic for extremely small p-values.
+gofTable.ttest_negLog10P = nan(height(gofTable),1);
+
 gofRow=1;
 
 nClasses=2;
@@ -376,12 +433,21 @@ nClasses=2;
 % ampRange=[min(cell2mat(LFPTable.LFP(gofRow)),[],"all"),max(cell2mat(LFPTable.LFP(gofRow)),[],"all")];
 % binEdges=logspace(log10(ampRange(1)),log10(ampRange(2)),101);
 % binCenters=convert_edges_2_centers(log10(binEdges))';
-ampRange=[min(cell2mat(LFPTable.LFP),[],"all"),max(cell2mat(LFPTable.LFP),[],"all")];
-binEdges=logspace(log10(ampRange(1)),log10(ampRange(2)),101);
-binCenters=convert_edges_2_centers(log10(binEdges))';
+% ampRange=[min(cell2mat(LFPTable.LFP),[],"all"),max(cell2mat(LFPTable.LFP),[],"all")];
+% binEdges=logspace(log10(ampRange(1)),log10(ampRange(2)),101);
+% binCenters=convert_edges_2_centers(log10(binEdges))';
+% x_grid = linspace(log10(ampRange(1)),log10(ampRange(2)),10000)';
+% Use the finite positive amplitudes collected from usable rows.
+ampRange = globalAmpRange;
+binEdges = logspace(log10(ampRange(1)),log10(ampRange(2)),101);
+binCenters = convert_edges_2_centers(log10(binEdges))';
 x_grid = linspace(log10(ampRange(1)),log10(ampRange(2)),10000)';
 
-for i=1:11%height(gofTable)
+% Fit every row that contains usable LFP amplitudes.
+for i = 1:numel(processedRows)
+
+    % Store the result in its original LFPTable/gofTable row.
+    gofRow = processedRows(i);
 
     % regRows=find(gofTable.Subregion==all_reg(i));
     % axonsCounted=axonsCounted+length(regRows);
@@ -619,7 +685,7 @@ for i=1:11%height(gofTable)
     % Start component 2 above 1 on the log10 plot (>10 uV), and initialize
     % component 2 with a larger standard deviation than component 1.
     % -------------------------------------------------------------------------
-    minMu2_log = 1;   % log10 amplitude of 1 = 10 uV
+    minMu2_log = log10(30);   % log10 amplitude of 1 = 10 uV
 
     lowStartData  = myData(myData <= minMu2_log);
     highStartData = myData(myData >  minMu2_log);
@@ -680,7 +746,7 @@ for i=1:11%height(gofTable)
         end
 
         % Advance to the next table row and skip the remaining GMM code.
-        gofRow = gofRow+1;
+        %gofRow = gofRow+1;
         continue
     end
 
@@ -731,10 +797,18 @@ for i=1:11%height(gofTable)
         'Replicates',1, ...
         'RegularizationValue',regValue);
 
+    % OLD: do not mark the row fitted until both models finish.
+    % gofTable.fitStatus(gofRow) = "fitted";
+    % gofTable.skipReason(gofRow) = "";
+
     % Keep this only if you want BIC comparison with a one-component model.
     gmm1 = fitgmdist(myData,1, ...
         'Options',options, ...
         'RegularizationValue',regValue);
+
+    % Both requested fits completed successfully.
+    gofTable.fitStatus(gofRow) = "fitted";
+    gofTable.skipReason(gofRow) = "";
 
     % -------------------------------------------------------------------------
     % Sort components by mean
@@ -864,29 +938,53 @@ for i=1:11%height(gofTable)
         predicted_labels = nan(size(myData));
     end
 
-    %Perform a T-Test on data based on labels
-    % ===== EDIT 7: NOTE -- this t-test is circular. myData is split AT the
-    %               boundary and then the two halves are tested for a mean
-    %               difference, which is true by construction. ttest_p is
-    %               therefore NOT evidence of bimodality and is deliberately
-    %               NOT used by the validity criteria below. Kept for the record.
+    % -------------------------------------------------------------------------
+    % Perform the t-test only when a boundary produced two usable groups.
+    %
+    % IMPORTANT: this test is descriptive only. The same fitted boundary is
+    % used to create the groups, so the test is not independent evidence of
+    % bimodality.
+    % -------------------------------------------------------------------------
+    h = NaN;
+    p = NaN;
+    ttestPerformed = false;
+
     if ~isempty(boundaries)
-        data1=myData(predicted_labels==1);
-        data2=myData(predicted_labels==2);
-        % ===== EDIT 7b: guard degenerate splits (all points on one side)
-        % [h,p]=ttest2(data1,data2,"Vartype","unequal");
+
+        data1 = myData(predicted_labels == 1);
+        data2 = myData(predicted_labels == 2);
+
         if numel(data1) > 1 && numel(data2) > 1
-            [h,p]=ttest2(data1,data2,"Vartype","unequal");
+            [h,p] = ttest2(data1,data2, ...
+                'Vartype','unequal', ...
+                'Alpha',0.05);
+
+            ttestPerformed = true;
         else
-            h=0; p=NaN;
+            warning(['The decision boundary did not produce two groups with ' ...
+                'at least two observations for %s.'],axonNames(i));
         end
-        % ==================================================================
-    else
-        h=0;
-        % No boundary means that no two-group test was performed.
-        p = NaN;
     end
 
+    % Save the result for every row, including NaN when no test was performed.
+    gofTable.ttest_h(gofRow) = h;
+    gofTable.ttest_p(gofRow) = p;
+    gofTable.ttestPerformed(gofRow) = ttestPerformed;
+
+    % Store -log10(p), which remains interpretable for very small p-values.
+    % If ttest2 returns exactly zero because of numerical underflow, this is Inf.
+    if ttestPerformed
+        if p > 0
+            gofTable.ttest_negLog10P(gofRow) = -log10(p);
+        elseif p == 0
+            gofTable.ttest_negLog10P(gofRow) = Inf;
+        end
+    end
+
+    % Figure rule:
+    % Show mu2 only when the test was performed and rejected H0.
+    % With no boundary, showMu2 is false because no test was performed.
+    showMu2 = ttestPerformed && (h == 1);
     figure;
     hold on;
 
@@ -1029,7 +1127,7 @@ for i=1:11%height(gofTable)
     close(gcf)
     close(gcf)    
     % ======================================================================
-    gofRow=gofRow+1;
+    %gofRow=gofRow+1;
     % end
 end
 
@@ -1054,12 +1152,17 @@ xlsxTable.boundaries = bnd;
 writetable(xlsxTable, fullfile(figOutDir,"byAxonGMMFits_muSort.xlsx"))
 
 %% Single axon Dunnett testing and removal for Mu2
-
+% OLD ANALYSIS DISABLED:
+% The Dunnett procedure gives each individual mu2 group only one
+% observation and destructively removes fitted boundaries.
+%{
 if ~exist("gofTable","var")
-    gofTable=readtable("C:\BrewerLabResearch\Presentations&Figures\GaussFitFigsASR_HighGamma\byAxonGMMFits.xlsx"); %Change b/w low and high gamma
+    gofTable = readtable( ...
+    fullfile(figOutDir,"byAxonGMMFits_muSort.xlsx")); 
 end
 
-ampRange=[min(cell2mat(LFPTable.LFP),[],"all"),max(cell2mat(LFPTable.LFP),[],"all")];
+%ampRange=[min(cell2mat(LFPTable.LFP),[],"all"),max(cell2mat(LFPTable.LFP),[],"all")];
+ampRange = globalAmpRange;
 binEdges=logspace(log10(ampRange(1)),log10(ampRange(2)),101);
 binCenters=convert_edges_2_centers(log10(binEdges))';
 x_grid = linspace(log10(ampRange(1)),log10(ampRange(2)),100)';
@@ -1075,15 +1178,38 @@ for i=1:length(all_reg)
 
     figure
     hold on
-    regRows=find(LFPTable.Subregion==all_reg(i));
+    regRows = find( ...
+        LFPTable.Subregion == all_reg(i) & hasLFP);
+
+    if isempty(regRows)
+        warning('%s has no usable LFP data; skipping.',all_reg(i));
+        continue
+    end
     axonNames=string();
     noiseFitMat=[];
     goodMu2=[];
     weight2=[];
     axonID=[];
     axonNum=[];
-    [maxAmp,maxAmpIdx]=cellfun(@max,LFPTable.LFP(regRows));
-    [~,maxAmpAxonIdx]=max(maxAmp);
+    % [maxAmp,maxAmpIdx]=cellfun(@max,LFPTable.LFP(regRows));
+    % [~,maxAmpAxonIdx]=max(maxAmp);
+    % Obtain one scalar maximum per electrode.
+    maxAmp = nan(numel(regRows),1);
+
+    for k = 1:numel(regRows)
+        thisLFP = LFPTable.LFP{regRows(k)};
+        thisLFP = thisLFP(isfinite(thisLFP));
+
+        if ~isempty(thisLFP)
+            maxAmp(k) = max(thisLFP(:));
+        end
+    end
+
+    if any(isfinite(maxAmp))
+        [~,maxAmpAxonIdx] = max(maxAmp,[],'omitnan');
+    else
+        maxAmpAxonIdx = [];
+    end
     for naxons=1:length(regRows)
         if iscell(gofTable.boundaries(regRows(naxons)))
             if ~isempty(gofTable.boundaries{regRows(naxons)})
@@ -1109,7 +1235,8 @@ for i=1:length(all_reg)
             end
         end
 
-        if naxons==maxAmpAxonIdx
+        %if naxons==maxAmpAxonIdx
+        if ~isempty(maxAmpAxonIdx) && naxons == maxAmpAxonIdx
             histogram(log10(LFPTable.LFP{regRows(naxons)}), log10(binEdges), 'Normalization', 'pdf', ...
         'FaceColor', [0.2 0.6 1.0], 'FaceAlpha', 0.5)
         end
@@ -1118,17 +1245,68 @@ for i=1:length(all_reg)
         warning('%s: no valid mu2, skipping Dunnett.',all_reg(i));
         continue
     end
-    myMu1=gofTable.mu1(regRows);
-    mu1Avg = mean(myMu1);
-    newSD = std(gofTable.mu1(regRows));
-    meanPrior1=max(gofTable.weights1(regRows));
-    plot(x_grid,gauss(x_grid,mu1Avg,newSD).*meanPrior1,"LineWidth",4,"Color","b")
+    % %myMu1=gofTable.mu1(regRows);
+    % validMu1Rows = regRows( ...
+    %     gofTable.fitStatus(regRows) == "fitted" & ...
+    %     isfinite(gofTable.mu1(regRows)));
+    % % myMu1 = gofTable.mu1(validMu1Rows);
+    % % mu1Avg = mean(myMu1);
+    % % newSD = std(gofTable.mu1(regRows));
+    % % meanPrior1=max(gofTable.weights1(regRows));
+    % validMu1Rows = regRows( ...
+    %     gofTable.fitStatus(regRows) == "fitted" & ...
+    %     isfinite(gofTable.mu1(regRows)));
+    % myMu1 = gofTable.mu1(validMu1Rows);
+    % newSD = std(myMu1);
+    % meanPrior1 = max(gofTable.weights1(validMu1Rows),[],'omitnan');
+    % plot(x_grid,gauss(x_grid,mu1Avg,newSD).*meanPrior1,"LineWidth",4,"Color","b")
+    
+    % Use only successfully fitted, finite mu1 values.
+    validMu1Rows = regRows( ...
+        gofTable.fitStatus(regRows) == "fitted" & ...
+        isfinite(gofTable.mu1(regRows)));
 
-    mu2Avg = mean(goodMu2);
-    newSD = std(goodMu2);
-    meanPrior2=max(weight2);
-    plot(x_grid,gauss(x_grid,mu2Avg,newSD).*meanPrior2,"LineWidth",4,"Color","r")
-    area(x_grid,gauss(x_grid,mu2Avg,newSD).*meanPrior2,'FaceColor','r','FaceAlpha',0.25,'EdgeColor','none')
+    myMu1 = gofTable.mu1(validMu1Rows);
+
+    if isempty(myMu1)
+        warning('%s has no successfully fitted mu1 values; skipping Dunnett.', ...
+            all_reg(i));
+        close(gcf)
+        continue
+    end
+
+    mu1Avg = mean(myMu1,'omitnan');
+    newVariance = var(myMu1,'omitnan');
+    meanPrior1 = max(gofTable.weights1(validMu1Rows),[],'omitnan');
+
+    if isfinite(newVariance) && newVariance > 0 && isfinite(meanPrior1)
+        plot(x_grid, ...
+            gauss(x_grid,mu1Avg,newVariance).*meanPrior1, ...
+            "LineWidth",4,"Color","b")
+    else
+        warning('%s: insufficient variation to plot the regional mu1 curve.', ...
+            all_reg(i));
+    end
+
+    mu2Avg = mean(goodMu2,'omitnan');
+    mu2Variance = var(goodMu2,'omitnan');
+    meanPrior2 = max(weight2,[],'omitnan');
+
+    % A single mu2 value has zero/undefined regional variance.
+    if ~isfinite(mu2Variance) || mu2Variance <= 0
+        mu2Variance = eps;
+    end
+
+    mu2Curve = ...
+        gauss(x_grid,mu2Avg,mu2Variance).*meanPrior2;
+
+    plot(x_grid,mu2Curve, ...
+        "LineWidth",4,"Color","r")
+
+    area(x_grid,mu2Curve, ...
+        'FaceColor','r', ...
+        'FaceAlpha',0.25, ...
+        'EdgeColor','none')
     hold off
 
     ax=gca;
@@ -1164,7 +1342,78 @@ for i=1:length(all_reg)
         end
     end
 end
+%}
+%% Per-axon bimodality criteria
 
+minWeight2    = 0.01;
+minCount2     = 50;
+minSeparation = 2;
+
+% Only successfully fitted rows are eligible.
+wasFitted = gofTable.fitStatus == "fitted";
+
+% The two-component model must have the lower BIC.
+bicPass = gofTable.BIC2 < gofTable.BIC1;
+
+% The high-amplitude component must have sufficient fitted weight and
+% sufficient estimated observations.
+wPass = ...
+    gofTable.weights2 >= minWeight2 & ...
+    gofTable.weights2 .* gofTable.nSamples >= minCount2;
+
+% The fitted means must be separated by at least minSeparation times the
+% lower component's fitted standard deviation.
+sepPass = ...
+    gofTable.mu2 > ...
+    gofTable.mu1 + minSeparation*sqrt(gofTable.sigma1);
+
+% Confirm that a finite between-mean boundary exists.
+hasBoundary = false(height(gofTable),1);
+
+for r = 1:height(gofTable)
+    b = gofTable.boundaries{r};
+
+    hasBoundary(r) = ...
+        ~isempty(b) && ...
+        all(isfinite(b)) && ...
+        isfinite(gofTable.mu2(r)) && ...
+        gofTable.mu2(r) > b(1);
+end
+
+% Final non-destructive validity definition.
+gofTable.mu2Valid = ...
+    wasFitted & ...
+    gofTable.mu2 > 1 & ...
+    hasBoundary & ...
+    bicPass & ...
+    wPass & ...
+    sepPass;
+
+% Retain each individual criterion for inspection.
+gofTable.bicPass = bicPass;
+gofTable.wPass = wPass;
+gofTable.sepPass = sepPass;
+gofTable.hasBoundary = hasBoundary;
+
+fprintf('\n--- mu2 validity breakdown (n = %d electrode pairs) ---\n', ...
+    height(gofTable));
+
+fprintf('  Successfully fitted : %d\n',sum(wasFitted));
+fprintf('  Final mu2 > 1       : %d\n',sum(gofTable.mu2 > 1));
+fprintf('  Has boundary        : %d\n',sum(hasBoundary));
+fprintf('  BIC favors K=2      : %d\n',sum(bicPass));
+fprintf('  Weight/count pass   : %d\n',sum(wPass));
+fprintf('  Separation pass     : %d\n',sum(sepPass));
+fprintf('  All criteria        : %d\n',sum(gofTable.mu2Valid));
+
+for i = 1:length(all_reg)
+    sel = gofTable.Subregion == all_reg(i) & hasLFP;
+
+    fprintf('  %-10s %d/%d valid\n', ...
+        all_reg(i), ...
+        sum(sel & gofTable.mu2Valid), ...
+        sum(sel));
+end
 % %% Per-axon bimodality criteria (REPLACES Dunnett testing and removal)
 % %
 % % --- WHY THE OLD CELL WAS REMOVED ---------------------------------------
@@ -1451,17 +1700,20 @@ end
 %% More Statistical tests and figure generation
 
 if ~exist("gofTable","var")
-    gofTable=readtable(fullfile(figOutDir,"byAxonGMMFits.xlsx"));
+   gofTable = readtable( ...
+   fullfile(figOutDir,"byAxonGMMFits_muSort.xlsx"));
     % NOTE: this fallback cannot restore LFPTable (LFP is a cell column and
     % is not written to xlsx). You must re-run the Hilbert cell after a clear.
 end
 
-ampRange=[min(cell2mat(LFPTable.LFP),[],"all"),max(cell2mat(LFPTable.LFP),[],"all")];
+%ampRange=[min(cell2mat(LFPTable.LFP),[],"all"),max(cell2mat(LFPTable.LFP),[],"all")];
+ampRange = globalAmpRange;
 binEdges=logspace(log10(ampRange(1)),log10(ampRange(2)),101);
 binCenters=convert_edges_2_centers(log10(binEdges))';
 x_grid = linspace(log10(ampRange(1)),log10(ampRange(2)),100)';
 gauss = @(x, m, s) (1 / sqrt(2*pi*s)) .* exp(-((x - m).^2) / (2*s));
 
+%{
 % ===== Rebuild per-axon validity from the Dunnett-pruned boundaries ======
 % The Dunnett cell sets gofTable.boundaries{r} = [] for axons it rejects.
 % An axon is therefore "valid" if it still has a boundary AND its mu2 sits
@@ -1486,7 +1738,21 @@ for i = 1:length(all_reg)
     fprintf('  %-10s %d/%d\n', all_reg(i), sum(sel & mu2Valid), sum(sel));
 end
 % ========================================================================
+%}
+% NEW: use the non-destructive per-electrode validity result.
+mu2Valid = logical(gofTable.mu2Valid);
 
+fprintf('\nValid mu2: %d/%d electrode pairs\n', ...
+    sum(mu2Valid),height(gofTable));
+
+for i = 1:length(all_reg)
+    sel = gofTable.Subregion == all_reg(i) & hasLFP;
+
+    fprintf('  %-10s %d/%d\n', ...
+        all_reg(i), ...
+        sum(sel & mu2Valid), ...
+        sum(sel));
+end
 % Anova variables
 x=[];
 g=[];
@@ -1496,13 +1762,34 @@ gmu2=[];
 for i=1:length(all_reg)
     figure
     hold on
-    regRows=find(LFPTable.Subregion==all_reg(i));
+    regRows = find(LFPTable.Subregion == all_reg(i) & hasLFP);
+    if isempty(regRows)
+        warning('%s has no usable LFP data; skipping.',all_reg(i));
+        continue
+    end
     axonNames=string();
     noiseFitMat=[];
     goodMu2=[];
     weight2=[];
-    [maxAmp,maxAmpIdx]=cellfun(@max,LFPTable.LFP(regRows));
-    [~,maxAmpAxonIdx]=max(maxAmp);
+    % [maxAmp,maxAmpIdx]=cellfun(@max,LFPTable.LFP(regRows));
+    % [~,maxAmpAxonIdx]=max(maxAmp);
+    % Obtain one scalar maximum per electrode.
+    maxAmp = nan(numel(regRows),1);
+
+    for k = 1:numel(regRows)
+        thisLFP = LFPTable.LFP{regRows(k)};
+        thisLFP = thisLFP(isfinite(thisLFP));
+
+        if ~isempty(thisLFP)
+            maxAmp(k) = max(thisLFP(:));
+        end
+    end
+
+    if any(isfinite(maxAmp))
+        [~,maxAmpAxonIdx] = max(maxAmp,[],'omitnan');
+    else
+        maxAmpAxonIdx = [];
+    end
 
     % single loop -- each axon counted exactly once
     for naxons=1:length(regRows)
@@ -1514,28 +1801,65 @@ for i=1:length(all_reg)
         end
 
         % Plot max amplitude axon
-        if naxons==maxAmpAxonIdx
+        %if naxons==maxAmpAxonIdx
+        if ~isempty(maxAmpAxonIdx) && naxons == maxAmpAxonIdx
             histogram(log10(LFPTable.LFP{r}), log10(binEdges), 'Normalization','pdf', ...
                       'FaceColor',[0.2 0.6 1.0], 'FaceAlpha',0.5)
         end
     end
 
-    myMu1=gofTable.mu1(regRows);
-    mu1Avg = mean(myMu1);
-    newSD = std(gofTable.mu1(regRows));
-    meanPrior1=max(gofTable.weights1(regRows));
-    if isfinite(newSD) && newSD > 0
-        plot(x_grid,gauss(x_grid,mu1Avg,newSD).*meanPrior1,"LineWidth",4,"Color","b")
+    % myMu1=gofTable.mu1(regRows);
+    % mu1Avg = mean(myMu1);
+    % newSD = std(gofTable.mu1(regRows));
+    % meanPrior1=max(gofTable.weights1(regRows));
+    validMu1Rows = regRows( ...
+        gofTable.fitStatus(regRows) == "fitted" & ...
+        isfinite(gofTable.mu1(regRows)));
+
+    myMu1 = gofTable.mu1(validMu1Rows);
+
+    if isempty(myMu1)
+        warning('%s has no successfully fitted mu1 values.',all_reg(i));
+        close(gcf)
+        continue
+    end
+
+    mu1Avg = mean(myMu1,'omitnan');
+    mu1Variance = var(myMu1,'omitnan');
+    meanPrior1 = max(gofTable.weights1(validMu1Rows),[],'omitnan');
+
+    if isfinite(mu1Variance) && mu1Variance > 0 && isfinite(meanPrior1)
+        plot(x_grid, ...
+            gauss(x_grid,mu1Avg,mu1Variance).*meanPrior1, ...
+            "LineWidth",4,"Color","b")
     end
 
     if ~isempty(goodMu2) && ~isempty(weight2)
-        mu2Avg = mean(goodMu2);
-        newSD = std(goodMu2);
-        if ~isfinite(newSD) || newSD == 0, newSD = eps; end   % single axon -> std = 0
-        meanPrior2 = max(weight2);
-        plot(x_grid,gauss(x_grid,mu2Avg,newSD).*meanPrior2,"LineWidth",4,"Color","r")
-        area(x_grid,gauss(x_grid,mu2Avg,newSD).*meanPrior2, ...
-             'FaceColor','r','FaceAlpha',0.25,'EdgeColor','none')
+        % mu2Avg = mean(goodMu2);
+        % newSD = std(goodMu2);
+        % if ~isfinite(newSD) || newSD == 0, newSD = eps; end   % single axon -> std = 0
+        % meanPrior2 = max(weight2);
+        % plot(x_grid,gauss(x_grid,mu2Avg,newSD).*meanPrior2,"LineWidth",4,"Color","r")
+        % area(x_grid,gauss(x_grid,mu2Avg,newSD).*meanPrior2, ...
+        %      'FaceColor','r','FaceAlpha',0.25,'EdgeColor','none')
+        mu2Avg = mean(goodMu2,'omitnan');
+        newVariance = var(goodMu2,'omitnan');
+        meanPrior2 = max(weight2,[],'omitnan');
+
+        if ~isfinite(newVariance) || newVariance <= 0
+            newVariance = eps;
+        end
+
+        mu2Curve = ...
+            gauss(x_grid,mu2Avg,newVariance).*meanPrior2;
+
+        plot(x_grid,mu2Curve, ...
+            "LineWidth",4,"Color","r")
+
+        area(x_grid,mu2Curve, ...
+            'FaceColor','r', ...
+            'FaceAlpha',0.25, ...
+            'EdgeColor','none')
     else
         warning("%s: no valid mu2 to plot.", all_reg(i))
     end
@@ -1548,7 +1872,7 @@ for i=1:length(all_reg)
     ylabel('Probability Density');
     axis square
     box on
-    set(ax,"FontSize",32)
+    set(ax,"FontSize",16)
     ax.LineWidth=4;
     ax.TickLength=[0.05,0.025];
     xlim(log10(ampRange))
@@ -1598,8 +1922,8 @@ means = nan(length(all_reg),2);      % rows = regions, col 1 = mu1, col 2 = mu2
 SEs   = nan(length(all_reg),2);
 nPerGroup = zeros(length(all_reg),2);
 
-% mu2Valid is created in the More Stats cell. Rebuild it if this cell is
-% run on its own.
+% OLD: do not reconstruct validity from boundaries alone.
+%{
 if ~exist('mu2Valid','var')
     mu2Valid = false(height(gofTable),1);
     for r = 1:height(gofTable)
@@ -1613,6 +1937,18 @@ if ~exist('mu2Valid','var')
         end
     end
 end
+%}
+
+% NEW: use the same validity definition as the preceding analysis.
+if ~exist('mu2Valid','var')
+    if ismember("mu2Valid", ...
+            string(gofTable.Properties.VariableNames))
+        mu2Valid = logical(gofTable.mu2Valid);
+    else
+        error(['gofTable.mu2Valid is missing. Run the per-axon ' ...
+            'bimodality-criteria section before this section.']);
+    end
+end
 
 for i = 1:length(all_reg)
     i1 = find(grpNames == all_reg(i)+" mu1",1);
@@ -1621,7 +1957,17 @@ for i = 1:length(all_reg)
     if ~isempty(i2), means(i,2)=m(i2,1); SEs(i,2)=m(i2,2); end
 
     sel = gofTable.Subregion == all_reg(i);
-    nPerGroup(i,1) = sum(sel);
+
+    % OLD: this counted skipped and failed rows.
+    % nPerGroup(i,1) = sum(sel);
+
+    % NEW: count only the finite fitted mu1 values that entered the ANOVA.
+    validMu1Selection = ...
+        sel & ...
+        gofTable.fitStatus == "fitted" & ...
+        isfinite(gofTable.mu1);
+
+    nPerGroup(i,1) = sum(validMu1Selection);
     nPerGroup(i,2) = sum(sel & mu2Valid);
 end
 
@@ -1629,6 +1975,8 @@ myCats=categorical(all_reg);
 myCats=reordercats(myCats,all_reg);
 
 figure
+set(gcf,'Units', 'Normalized', 'OuterPosition', [0 0 1 1])
+set(gcf, 'Toolbar', 'none', 'Menu', 'none')
 hBar=bar(myCats, means);
 hold on
 
@@ -1642,27 +1990,48 @@ for s = 1:nSeries
     end
 end
 
-% annotate n; blank mu2 slots read "n=0" so they look reported, not broken
+% Add sample counts above the error bars.
 yl_now = ylim;
+labelOffset = 0.03*range(yl_now);
+
 for s = 1:nSeries
     xe = hBar(s).XEndPoints;
+
     for gi = 1:numel(xe)
         if isfinite(means(gi,s))
-            text(xe(gi), means(gi,s)+0.02*range(yl_now), "n="+nPerGroup(gi,s), ...
-                 'HorizontalAlignment','center','FontSize',12);
+            text(xe(gi), ...
+                means(gi,s) + SEs(gi,s) + labelOffset, ...
+                string(nPerGroup(gi,s)), ...
+                'HorizontalAlignment','center', ...
+                'VerticalAlignment','bottom', ...
+                'FontSize',12);
         else
-            text(xe(gi), yl_now(1)+0.03*range(yl_now), "n=0", ...
-                 'HorizontalAlignment','center','FontSize',12,'Color',[0.5 0.5 0.5]);
+            text(xe(gi), ...
+                yl_now(1) + labelOffset, ...
+                "0", ...
+                'HorizontalAlignment','center', ...
+                'VerticalAlignment','bottom', ...
+                'FontSize',12, ...
+                'Color',[0.5 0.5 0.5]);
         end
     end
 end
 
+% Add vertical headroom so the counts are not clipped.
+yl = ylim;
+ylim([yl(1), yl(2) + 0.12*range(yl)])
+
 hold off
+
+title("Low Gamma Source Amplitudes Above Noise")
+%title("High Gamma Source Amplitudes Above Noise")
+subtitle("Numbers above bars indicate n (fitted electrode–axon pairs)")
+xlabel("Subregion")
 ylabel("Average log_{10} \muV")
-legend({'\mu_1 (noise)','\mu_2 (signal)'},'Location','best')
+legend({'\mu_1 (noise)','\mu_2 (signal)'},'Location','eastoutside')
 
 ax=gca;
-ax.FontSize=32;
+ax.FontSize=16;
 axis square
 box on
 ax.LineWidth=4;
