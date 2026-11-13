@@ -217,16 +217,16 @@ for i=1:length(all_reg)
 
     m=exp(mu+(sigma^2/2));
     v=exp(2*mu+sigma^2)*(exp(sigma^2)-1);
-
-    xline(ax1,m+2*v)
+    ampThreshold = m+2*sqrt(v);
+    xline(ax1,ampThreshold)
     legend(ax1,axonNames)
-    xline(ax2,m+2*v)
+    xline(ax2,ampThreshold)
 
-    % ===== EDIT 4: clamp last_bin. If m+2*v lands past the final edge (common
+    % ===== EDIT 4: clamp last_bin. If ampThreshold lands past the final edge (common
     %               in high gamma, short tail) last_bin(1) errored on empty.
-    % last_bin=find(binEdges>m+2*v);
+    % last_bin=find(binEdges>ampThreshold);
     % last_bin=last_bin(1);
-    last_bin=find(binEdges>m+2*v);
+    last_bin=find(binEdges>ampThreshold);
     if isempty(last_bin)
         last_bin = numel(binEdges)-1;
     else
@@ -264,7 +264,7 @@ for i=1:length(all_reg)
     axis square
     l=legend(ax3,[axonNames,"Gauss Fit"]);
     l.AutoUpdate="off";
-    xline(ax3,m+2*v,'LineWidth',4,'Color','k','LineStyle','--')
+    xline(ax3,ampThreshold,'LineWidth',4,'Color','k','LineStyle','--')
     % title(ax3,all_reg(i)+" "+sum(any(ampPts(:,last_bin:end),2))+"/"+size(ampPts,1))
     % title(ax3,all_reg(i)+" "+size(ampPts,1))
     t=text(0.025,0.95,ax3,all_reg(i)+" "+"n="+size(ampPts,1),'Units','normalized','FontSize',30);
@@ -321,7 +321,7 @@ for i=1:length(all_reg)
     axis square
     l=legend(ax4,axonNames);
     l.AutoUpdate="off";
-    xline(ax4,m+2*v,'LineWidth',4,'Color','k','LineStyle','--')
+    xline(ax4,ampThreshold,'LineWidth',4,'Color','k','LineStyle','--')
     % title(ax3,all_reg(i)+" "+sum(any(ampPts(:,last_bin:end),2))+"/"+size(ampPts,1))
     % title(ax3,all_reg(i)+" "+size(ampPts,1))
     t=text(0.025,0.95,ax4,all_reg(i)+" "+"n="+size(ampPts,1),'Units','normalized','FontSize',30);
@@ -425,10 +425,57 @@ gofTable.ttestPerformed = false(height(gofTable),1);
 
 % Optional diagnostic for extremely small p-values.
 gofTable.ttest_negLog10P = nan(height(gofTable),1);
+% Preallocate all per-row fit outputs.
+% NaN means that the quantity was not calculated.
+nRows = height(gofTable);
 
+numericFitVars = [
+    "NegativeLogLikelihood"
+    "BIC1"
+    "BIC2"
+    "nSamples"
+    "maxAmplitude_uV"
+    "mu1"
+    "mu2"
+    "sigma1"
+    "sigma2"
+    "std1"
+    "std2"
+    "startMu1"
+    "startMu2"
+    "startStd1"
+    "startStd2"
+    "weights1"
+    "weights2"
+    "ampUnweighted1"
+    "ampUnweighted2"
+    "ampWeighted1"
+    "ampWeighted2"
+    "minAllowedBoundary"
+    "integration_log10"
+    "integration"
+    "percentIntegrated"
+    "nMu1"
+    "nMu2"
+];
+
+for v = 1:numel(numericFitVars)
+    gofTable.(char(numericFitVars(v))) = nan(nRows,1);
+end
+
+gofTable.mu2AboveThreshold = false(nRows,1);
+gofTable.std2Larger = false(nRows,1);
 gofRow=1;
 
 nClasses=2;
+
+% High-amplitude-component threshold.
+minMu2_uV  = 30;
+minMu2_log = log10(minMu2_uV);
+
+% Store the threshold in every row for inspection/export.
+gofTable.minMu2_uV  = repmat(minMu2_uV,height(gofTable),1);
+gofTable.minMu2_log = repmat(minMu2_log,height(gofTable),1);
 
 % ampRange=[min(cell2mat(LFPTable.LFP(gofRow)),[],"all"),max(cell2mat(LFPTable.LFP(gofRow)),[],"all")];
 % binEdges=logspace(log10(ampRange(1)),log10(ampRange(2)),101);
@@ -456,12 +503,15 @@ for i = 1:numel(processedRows)
     ampPts=[];
     axonNames=string();
     % for naxons=1:length(regRows)
-    figure
+    tempFig = figure;
     hold on
     myData = log10(LFPTable.LFP{gofRow});
     myData = myData(:);   % force column vector regardless of input orientation
     % ===== EDIT 6: drop any residual -Inf/NaN before fitting.
     myData = myData(isfinite(myData));
+    % Record basic data information for every processed row.
+    gofTable.nSamples(gofRow) = numel(myData);
+    gofTable.maxAmplitude_uV(gofRow) = 10^max(myData);
     % ======================================================================
     pts=histogram(myData,log10(binEdges));
     ampPts=pts.BinCounts;
@@ -685,7 +735,6 @@ for i = 1:numel(processedRows)
     % Start component 2 above 1 on the log10 plot (>10 uV), and initialize
     % component 2 with a larger standard deviation than component 1.
     % -------------------------------------------------------------------------
-    minMu2_log = log10(30);   % log10 amplitude of 1 = 10 uV
 
     lowStartData  = myData(myData <= minMu2_log);
     highStartData = myData(myData >  minMu2_log);
@@ -698,16 +747,19 @@ for i = 1:numel(processedRows)
         maxAmplitude_uV = 10^max(myData);
 
         if isempty(highStartData)
-            skipReason = "no_data_above_10uV";
+            skipReason = "no_data_above_" + ...
+                string(round(minMu2_uV)) + "uV";
 
             warning(['Skipping two-component GMM for %s: no data exceed ' ...
-                '10 uV. Maximum amplitude = %.3f uV.'], ...
-                axonNames(i),maxAmplitude_uV);
+                '%.1f uV. Maximum amplitude = %.3f uV.'], ...
+                axonNames(i),minMu2_uV,maxAmplitude_uV);
         else
-            skipReason = "no_data_at_or_below_10uV";
+            skipReason = "no_data_at_or_below_" + ...
+                string(round(minMu2_uV)) + "uV";
 
             warning(['Skipping two-component GMM for %s: no data are at or ' ...
-                'below 10 uV.'],axonNames(i));
+                'below %.1f uV.'], ...
+                axonNames(i),minMu2_uV);
         end
 
         % Record why this row was not fitted.
@@ -741,8 +793,8 @@ for i = 1:numel(processedRows)
         gofTable.myData{gofRow} = myData;
 
         % Close the temporary histogram figure created earlier in this iteration.
-        if ~isempty(get(groot,'CurrentFigure'))
-            close(gcf);
+        if isgraphics(tempFig)
+            close(tempFig);
         end
 
         % Advance to the next table row and skip the remaining GMM code.
@@ -830,7 +882,7 @@ for i = 1:numel(processedRows)
     % -------------------------------------------------------------------------
     stdComponents = sqrt(sigma);
 
-    finalMu2AboveOne = mu(2) > minMu2_log;
+    finalMu2AboveThreshold = mu(2) > minMu2_log;
     finalStd2Larger  = stdComponents(2) > stdComponents(1);
 
     fprintf(['Start: mu1 = %.4f, mu2 = %.4f, ' ...
@@ -842,8 +894,10 @@ for i = 1:numel(processedRows)
         'SD1 = %.4f, SD2 = %.4f\n'], ...
         mu(1),mu(2),stdComponents(1),stdComponents(2));
 
-    if ~finalMu2AboveOne
-        warning('Final mu2 moved below 1 log10 unit for %s.',axonNames(i));
+    if ~finalMu2AboveThreshold
+        warning(['Final mu2 moved below the initialization threshold ' ...
+            '(%.1f uV) for %s.'], ...
+            minMu2_uV,axonNames(i));
     end
 
     if ~finalStd2Larger
@@ -966,7 +1020,8 @@ for i = 1:numel(processedRows)
         end
     end
 
-    % Save the result for every row, including NaN when no test was performed.
+    % Save the result for every row.
+    % NaN means that no valid t-test was performed.
     gofTable.ttest_h(gofRow) = h;
     gofTable.ttest_p(gofRow) = p;
     gofTable.ttestPerformed(gofRow) = ttestPerformed;
@@ -985,8 +1040,6 @@ for i = 1:numel(processedRows)
     % Show mu2 only when the test was performed and rejected H0.
     % With no boundary, showMu2 is false because no test was performed.
     showMu2 = ttestPerformed && (h == 1);
-    figure;
-    hold on;
 
     % % Histogram of raw data
     % histogram(myData, log10(binEdges), 'Normalization', 'pdf', ...
@@ -1014,7 +1067,7 @@ for i = 1:numel(processedRows)
     % -------------------------------------------------------------------------
     % Plot histogram, sorted components, mixture, means, and boundary
     % -------------------------------------------------------------------------
-    figure;
+    gmmFig = figure;
     hold on;
 
     histogram(myData,log10(binEdges), ...
@@ -1029,40 +1082,62 @@ for i = 1:numel(processedRows)
         'LineWidth',3, ...
         'DisplayName',sprintf('Low-\\mu Component: \\mu=%.3f',mu(1)));
 
-    % Higher-mean component is always red
-    plot(x_grid,joint2,'r-', ...
-        'LineWidth',3, ...
-        'DisplayName',sprintf('High-\\mu Component: \\mu=%.3f',mu(2)));
+    % Display mu2 and the complete mixture only when the t-test was performed
+    % and rejected the null hypothesis.
+    if showMu2
+        plot(x_grid,joint2,'r-', ...
+            'LineWidth',3, ...
+            'DisplayName',sprintf('High-\\mu Component: \\mu=%.3f',mu(2)));
 
-    % Complete fitted distribution
-    plot(x_grid,evidence,'k--', ...
-        'LineWidth',2.5, ...
-        'DisplayName','GMM Mixture');
+        plot(x_grid,evidence,'k--', ...
+            'LineWidth',2.5, ...
+            'DisplayName','GMM Mixture');
+    end
 
-    % Show the location of each component mean
+    % The mu1 location is always displayed.
     xline(mu(1),'b:', ...
         'LineWidth',2, ...
         'HandleVisibility','off');
 
-    xline(mu(2),'r:', ...
-        'LineWidth',2, ...
-        'HandleVisibility','off');
+    % Display the mu2 location and boundary only when mu2 is supported by the
+    % requested t-test plotting rule.
+    if showMu2
+        xline(mu(2),'r:', ...
+            'LineWidth',2, ...
+            'HandleVisibility','off');
 
-    % Plot a boundary only when it occurs between the two means
-    if ~isempty(boundaries)
-        xline(boundaries(1),'m-', ...
-            'LineWidth',3, ...
-            'DisplayName',sprintf('Decision Boundary: x=%.3f',boundaries(1)));
+        if ~isempty(boundaries)
+            xline(boundaries(1),'m-', ...
+                'LineWidth',3, ...
+                'DisplayName',sprintf( ...
+                'Decision Boundary: x=%.3f',boundaries(1)));
+        end
     end
 
     xlabel('Log_{10} \muV');
     ylabel('Probability Density');
 
-    title({axonNames(i), ...
-        sprintf(['\\mu_1=%.3f, \\mu_2=%.3f, ' ...
-        'SD_1=%.3f, SD_2=%.3f, weights=%.2f/%.2f'], ...
-        mu(1),mu(2),stdComponents(1),stdComponents(2), ...
-        weights(1),weights(2))});
+    if showMu2
+        title({axonNames(i), ...
+            sprintf(['\\mu_1=%.3f, \\mu_2=%.3f, ' ...
+            'SD_1=%.3f, SD_2=%.3f, weights=%.2f/%.2f, ' ...
+            'p=%.3e'], ...
+            mu(1),mu(2), ...
+            stdComponents(1),stdComponents(2), ...
+            weights(1),weights(2),p)});
+    else
+        if ttestPerformed
+            resultText = sprintf( ...
+                '\\mu_1=%.3f, SD_1=%.3f; no significant \\mu_2, p=%.3e', ...
+                mu(1),stdComponents(1),p);
+        else
+            resultText = sprintf( ...
+                '\\mu_1=%.3f, SD_1=%.3f; no decision boundary/test', ...
+                mu(1),stdComponents(1));
+        end
+
+        title({axonNames(i),resultText});
+    end
 
     legend('show','Location','best');
     box on;
@@ -1091,7 +1166,7 @@ for i = 1:numel(processedRows)
     gofTable.startStd2(gofRow) = sqrt(start.Sigma(:,:,2));
 
     % Save whether the final fit retained the requested properties.
-    gofTable.mu2AboveOne(gofRow) = finalMu2AboveOne;
+    gofTable.mu2AboveThreshold(gofRow) = finalMu2AboveThreshold;
     gofTable.std2Larger(gofRow) = finalStd2Larger;
     gofTable.weights1(gofRow)=weights(1);
     gofTable.weights2(gofRow)=weights(2);
@@ -1108,8 +1183,8 @@ for i = 1:numel(processedRows)
         gofTable.percentIntegrated(gofRow)=sum(myData>boundaries)/length(myData)*100;
         gofTable.nMu1(gofRow)=sum(myData>mu(1)-2*sqrt(sigma(1)) & myData<mu(1)+2*sqrt(sigma(1)));
         gofTable.nMu2(gofRow)=sum(myData>mu(2)-2*sqrt(sigma(2)) & myData<mu(2)+2*sqrt(sigma(2)));
-        gofTable.ttest_h(gofRow)=h;
-        gofTable.ttest_p(gofRow)=p;
+        % gofTable.ttest_h(gofRow)=h;
+        % gofTable.ttest_p(gofRow)=p;
     else
         gofTable.integration_log10(gofRow)=0;
         gofTable.integration(gofRow)=0;
@@ -1123,9 +1198,17 @@ for i = 1:numel(processedRows)
     % saveas(gcf, fullfile("C:\BrewerLabResearch\Presentations&Figures\GaussFitFigsASR_HighGamma", "GMM " + axonNames(i) + ".png")) %Change b/w low and high gamma
     % ===== EDIT 8: use figOutDir.
     % OLD: saveas(gcf, fullfile(figOutDir, "GMM " + axonNames(i) + ".png"))
-    saveas(gcf, fullfile(figOutDir, "GMM muSort " + axonNames(i) + ".png"))
-    close(gcf)
-    close(gcf)    
+    saveas(gmmFig, ...
+        fullfile(figOutDir, ...
+        "GMM muSort " + axonNames(i) + ".png"));
+
+    if isgraphics(gmmFig)
+        close(gmmFig);
+    end
+
+    if isgraphics(tempFig)
+        close(tempFig);
+    end
     % ======================================================================
     %gofRow=gofRow+1;
     % end
@@ -1149,7 +1232,21 @@ xlsxTable.boundaries = bnd;
 % ======================================================================
 % writetable(xlsxTable,"C:\BrewerLabResearch\Presentations&Figures\GaussFitFigsASR_HighGamma\byAxonGMMFits.xlsx") %Change b/w low and high gamma
 % OLD: writetable(xlsxTable, fullfile(figOutDir,"byAxonGMMFits.xlsx"))
-writetable(xlsxTable, fullfile(figOutDir,"byAxonGMMFits_muSort.xlsx"))
+% Add a human-readable scientific-notation p-value column for Excel.
+xlsxTable.ttest_p_display = repmat("",height(xlsxTable),1);
+
+for r = 1:height(xlsxTable)
+    if ~xlsxTable.ttestPerformed(r)
+        xlsxTable.ttest_p_display(r) = "not tested";
+    elseif xlsxTable.ttest_p(r) == 0
+        xlsxTable.ttest_p_display(r) = ...
+            "< numerical precision";
+    else
+        xlsxTable.ttest_p_display(r) = ...
+            string(sprintf('%.6e',xlsxTable.ttest_p(r)));
+    end
+end
+writetable(xlsxTable, fullfile(figOutDir,"byAxonGMMFits_muSort_raw.xlsx"))
 
 %% Single axon Dunnett testing and removal for Mu2
 % OLD ANALYSIS DISABLED:
@@ -1353,19 +1450,28 @@ minSeparation = 2;
 wasFitted = gofTable.fitStatus == "fitted";
 
 % The two-component model must have the lower BIC.
-bicPass = gofTable.BIC2 < gofTable.BIC1;
+bicPass = ...
+    isfinite(gofTable.BIC1) & ...
+    isfinite(gofTable.BIC2) & ...
+    gofTable.BIC2 < gofTable.BIC1;
 
 % The high-amplitude component must have sufficient fitted weight and
 % sufficient estimated observations.
 wPass = ...
+    isfinite(gofTable.weights2) & ...
+    isfinite(gofTable.nSamples) & ...
     gofTable.weights2 >= minWeight2 & ...
     gofTable.weights2 .* gofTable.nSamples >= minCount2;
 
 % The fitted means must be separated by at least minSeparation times the
 % lower component's fitted standard deviation.
 sepPass = ...
+    isfinite(gofTable.mu1) & ...
+    isfinite(gofTable.mu2) & ...
+    isfinite(gofTable.sigma1) & ...
+    gofTable.sigma1 > 0 & ...
     gofTable.mu2 > ...
-    gofTable.mu1 + minSeparation*sqrt(gofTable.sigma1);
+        gofTable.mu1 + minSeparation*sqrt(gofTable.sigma1);
 
 % Confirm that a finite between-mean boundary exists.
 hasBoundary = false(height(gofTable),1);
@@ -1375,21 +1481,30 @@ for r = 1:height(gofTable)
 
     hasBoundary(r) = ...
         ~isempty(b) && ...
-        all(isfinite(b)) && ...
+        isfinite(b(1)) && ...
+        isfinite(gofTable.mu1(r)) && ...
         isfinite(gofTable.mu2(r)) && ...
-        gofTable.mu2(r) > b(1);
+        b(1) > gofTable.mu1(r) && ...
+        b(1) < gofTable.mu2(r);
 end
+
+% Final non-destructive validity definition.
+% The final high-amplitude mean must remain above 30 uV.
+thresholdPass = ...
+    isfinite(gofTable.mu2) & ...
+    gofTable.mu2 > gofTable.minMu2_log;
 
 % Final non-destructive validity definition.
 gofTable.mu2Valid = ...
     wasFitted & ...
-    gofTable.mu2 > 1 & ...
+    thresholdPass & ...
     hasBoundary & ...
     bicPass & ...
     wPass & ...
     sepPass;
 
 % Retain each individual criterion for inspection.
+gofTable.thresholdPass = thresholdPass;
 gofTable.bicPass = bicPass;
 gofTable.wPass = wPass;
 gofTable.sepPass = sepPass;
@@ -1399,7 +1514,7 @@ fprintf('\n--- mu2 validity breakdown (n = %d electrode pairs) ---\n', ...
     height(gofTable));
 
 fprintf('  Successfully fitted : %d\n',sum(wasFitted));
-fprintf('  Final mu2 > 1       : %d\n',sum(gofTable.mu2 > 1));
+fprintf('  Final mu2 above %.1f uV: %d\n', minMu2_uV,sum(thresholdPass));
 fprintf('  Has boundary        : %d\n',sum(hasBoundary));
 fprintf('  BIC favors K=2      : %d\n',sum(bicPass));
 fprintf('  Weight/count pass   : %d\n',sum(wPass));
@@ -1414,6 +1529,43 @@ for i = 1:length(all_reg)
         sum(sel & gofTable.mu2Valid), ...
         sum(sel));
 end
+
+% Export the final table after all validity criteria have been calculated.
+finalXlsxTable = gofTable;
+
+finalXlsxTable.myData = [];
+finalXlsxTable.gmm = [];
+finalXlsxTable.originalBounds = [];
+
+bnd = nan(height(gofTable),1);
+
+for r = 1:height(gofTable)
+    if ~isempty(gofTable.boundaries{r})
+        bnd(r) = gofTable.boundaries{r}(1);
+    end
+end
+
+finalXlsxTable.boundaries = bnd;
+
+% Human-readable p-value column.
+finalXlsxTable.ttest_p_display = ...
+    repmat("",height(finalXlsxTable),1);
+
+for r = 1:height(finalXlsxTable)
+    if ~finalXlsxTable.ttestPerformed(r)
+        finalXlsxTable.ttest_p_display(r) = "not tested";
+    elseif finalXlsxTable.ttest_p(r) == 0
+        finalXlsxTable.ttest_p_display(r) = ...
+            "< numerical precision";
+    else
+        finalXlsxTable.ttest_p_display(r) = ...
+            string(sprintf('%.6e', ...
+            finalXlsxTable.ttest_p(r)));
+    end
+end
+
+writetable(finalXlsxTable, ...
+    fullfile(figOutDir,"byAxonGMMFits_muSort_final.xlsx"));
 % %% Per-axon bimodality criteria (REPLACES Dunnett testing and removal)
 % %
 % % --- WHY THE OLD CELL WAS REMOVED ---------------------------------------
@@ -1700,10 +1852,9 @@ end
 %% More Statistical tests and figure generation
 
 if ~exist("gofTable","var")
-   gofTable = readtable( ...
-   fullfile(figOutDir,"byAxonGMMFits_muSort.xlsx"));
-    % NOTE: this fallback cannot restore LFPTable (LFP is a cell column and
-    % is not written to xlsx). You must re-run the Hilbert cell after a clear.
+    gofTable = readtable( ...
+        fullfile(figOutDir, ...
+        "byAxonGMMFits_muSort_final.xlsx"));
 end
 
 %ampRange=[min(cell2mat(LFPTable.LFP),[],"all"),max(cell2mat(LFPTable.LFP),[],"all")];
